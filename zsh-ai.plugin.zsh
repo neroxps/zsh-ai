@@ -82,22 +82,11 @@ _zsh_ai_accept_line() {
         # Save the current buffer
         local saved_buffer="$BUFFER"
         
-        # Clear the line
-        BUFFER=""
-        zle reset-prompt
-        
-        # Show loading message on a new line
-        print -P "%F{yellow}🤔 Thinking...%f"
-        
         # Get AI response
         local cmd=$(_zsh_ai_query "$query")
         
         if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
-            # Show the generated command
-            print -P "%F{green}💡 Generated command:%f %F{cyan}$cmd%f"
-            print -P "%F{gray}Press Enter to execute, or edit the command first%f"
-            
-            # Set the buffer to the generated command
+            # Simply replace the buffer with the generated command
             BUFFER="$cmd"
             
             # Move cursor to end of line
@@ -131,11 +120,10 @@ zsh-ai() {
     fi
     
     local query="$*"
-    echo "🤔 Thinking..."
     local cmd=$(_zsh_ai_query "$query")
     
     if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
-        print -P "%F{green}Generated command:%f %F{cyan}$cmd%f"
+        echo "$cmd"
         echo -n "Execute? [y/N] "
         read -r response
         if [[ "$response" =~ ^[Yy]$ ]]; then
