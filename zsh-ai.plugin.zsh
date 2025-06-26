@@ -79,8 +79,10 @@ _zsh_ai_accept_line() {
         # Extract the query (remove the "# " prefix)
         local query="${BUFFER:2}"
         
-        # Save the current buffer
+        # Add a subtle loading indicator
         local saved_buffer="$BUFFER"
+        BUFFER="$BUFFER ⏳"
+        zle redisplay
         
         # Get AI response
         local cmd=$(_zsh_ai_query "$query")
