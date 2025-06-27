@@ -53,6 +53,12 @@ brew tap matheusml/zsh-ai
 brew install zsh-ai
 ```
 
+Add this to your `~/.zshrc`
+
+```bash
+source $(brew --prefix)/share/zsh-ai/zsh-ai.plugin.zsh
+```
+
 ### Oh My Zsh
 
 ```bash
