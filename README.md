@@ -20,9 +20,13 @@ Transform natural language into shell commands instantly. No dependencies, no co
 
 ## Demo
 
+
+https://github.com/user-attachments/assets/2d20b4ee-fe1a-466a-af9f-bb04b2bc4f71
+
+
 ```bash
 $ # find all large files modified this week
-$ find . -type f -size +10M -mtime -7
+$ find . -type f -size +50M -mtime -7
 
 $ # kill process using port 3000  
 $ lsof -ti:3000 | xargs kill -9
