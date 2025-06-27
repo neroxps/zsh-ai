@@ -39,7 +39,7 @@ Just type what you want in plain English, get the exact command you need.
 
 ## Prerequisites
 
- ✅ zsh 5.0+ (you probably already have this)
+- ✅ zsh 5.0+ (you probably already have this)
 - ✅ An [Anthropic API key](https://console.anthropic.com/account/keys) (one-time setup)
 - ✅ `curl` (already on macOS/Linux)
 - ➕ `jq` (optional, for better reliability)
