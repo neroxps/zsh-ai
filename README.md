@@ -14,7 +14,7 @@ Transform natural language into shell commands instantly. No dependencies, no co
 
 **🎯 Dead Simple** - Just type `# what you want to do` and press Enter. That's it.
 
-**🔒 Privacy First** - Your commands stay local. API calls only when you trigger them.
+**🔒 Privacy First** - Bring your own API keys. Your commands stay local, API calls only when you trigger them.
 
 **🛠️ Zero Dependencies** - Optionally `jq` for reliability.
 
