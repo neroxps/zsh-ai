@@ -74,8 +74,15 @@ EOF
 
 # Custom widget to intercept Enter key
 _zsh_ai_accept_line() {
-    # Check if the line starts with "# "
+    # Check if the line starts with "# " and handle multiline input
     if [[ "$BUFFER" =~ ^'# ' ]]; then
+        # Check if buffer contains newlines (multiline command)
+        if [[ "$BUFFER" == *$'\n'* ]]; then
+            # Multiline command detected - execute normally without AI processing
+            zle .accept-line
+            return
+        fi
+        
         # Extract the query (remove the "# " prefix)
         local query="${BUFFER:2}"
         
