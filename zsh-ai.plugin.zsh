@@ -9,10 +9,103 @@ if [[ -z "$ANTHROPIC_API_KEY" ]]; then
     return 1
 fi
 
+# Function to detect project type
+_zsh_ai_detect_project_type() {
+    local project_type="unknown"
+    
+    if [[ -f "package.json" ]]; then
+        project_type="node"
+    elif [[ -f "Cargo.toml" ]]; then
+        project_type="rust"
+    elif [[ -f "requirements.txt" ]] || [[ -f "setup.py" ]] || [[ -f "pyproject.toml" ]]; then
+        project_type="python"
+    elif [[ -f "Gemfile" ]]; then
+        project_type="ruby"
+    elif [[ -f "go.mod" ]]; then
+        project_type="go"
+    elif [[ -f "composer.json" ]]; then
+        project_type="php"
+    elif [[ -f "pom.xml" ]] || [[ -f "build.gradle" ]]; then
+        project_type="java"
+    elif [[ -f "docker-compose.yml" ]] || [[ -f "Dockerfile" ]]; then
+        project_type="docker"
+    fi
+    
+    echo "$project_type"
+}
+
+# Function to get git context
+_zsh_ai_get_git_context() {
+    local git_info=""
+    
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+        local branch=$(git branch --show-current 2>/dev/null)
+        local git_status="clean"
+        
+        if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+            git_status="dirty"
+        fi
+        
+        git_info="Git: branch=$branch, status=$git_status"
+    fi
+    
+    echo "$git_info"
+}
+
+# Function to get directory context
+_zsh_ai_get_directory_context() {
+    local dir_context="Current directory: $(pwd)"
+    local file_count=$(ls -1 2>/dev/null | wc -l | tr -d ' ')
+    
+    if [[ $file_count -le 20 ]]; then
+        local files=$(ls -1 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
+        if [[ -n "$files" ]]; then
+            dir_context="$dir_context\nFiles: $files"
+            if [[ $file_count -gt 10 ]]; then
+                dir_context="$dir_context ... and $((file_count - 10)) more"
+            fi
+        fi
+    else
+        dir_context="$dir_context\nFiles: $file_count files in directory"
+    fi
+    
+    echo "$dir_context"
+}
+
+# Function to build context
+_zsh_ai_build_context() {
+    local context=""
+    
+    # Add directory context
+    context="$(_zsh_ai_get_directory_context)"
+    
+    # Add project type
+    local project_type=$(_zsh_ai_detect_project_type)
+    if [[ "$project_type" != "unknown" ]]; then
+        context="$context\nProject type: $project_type"
+    fi
+    
+    # Add git context
+    local git_context=$(_zsh_ai_get_git_context)
+    if [[ -n "$git_context" ]]; then
+        context="$context\n$git_context"
+    fi
+    
+    # Add OS context
+    context="$context\nOS: $(uname -s)"
+    
+    echo "$context"
+}
+
 # Function to call Anthropic API
 _zsh_ai_query() {
     local query="$1"
     local response
+    
+    # Build context
+    local context=$(_zsh_ai_build_context)
+    local escaped_context="${context//\"/\\\"}"
+    escaped_context="${escaped_context//$'\n'/\\n}"
     
     # Prepare the JSON payload - escape quotes in the query
     local escaped_query="${query//\"/\\\"}"
@@ -20,7 +113,7 @@ _zsh_ai_query() {
 {
     "model": "claude-3-5-sonnet-20241022",
     "max_tokens": 256,
-    "system": "You are a helpful assistant that generates shell commands. When given a natural language description, respond ONLY with the appropriate shell command. Do not include any explanation, markdown formatting, or backticks. Just the raw command.",
+    "system": "You are a helpful assistant that generates shell commands. When given a natural language description, respond ONLY with the appropriate shell command. Do not include any explanation, markdown formatting, or backticks. Just the raw command.\n\nContext:\n$escaped_context",
     "messages": [
         {
             "role": "user",
@@ -86,7 +179,7 @@ _zsh_ai_accept_line() {
         # Extract the query (remove the "# " prefix)
         local query="${BUFFER:2}"
         
-        # Add a subtle loading indicator
+        # Add a loading indicator
         local saved_buffer="$BUFFER"
         BUFFER="$BUFFER ⏳"
         zle redisplay

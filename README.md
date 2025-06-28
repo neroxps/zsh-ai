@@ -18,6 +18,8 @@ Transform natural language into shell commands instantly. No dependencies, no co
 
 **🛠️ Zero Dependencies** - Optionally `jq` for reliability.
 
+**🧠 Context Aware** - Automatically detects project type, git status, and current directory for smarter suggestions.
+
 ## Demo
 
 
