@@ -2,7 +2,7 @@
 
 > The lightweight AI assistant that lives in your terminal
 
-Transform natural language into shell commands instantly. No dependencies, no complex setup - just type what you want and get the command you need.
+Transform natural language into shell commands instantly. Works with both cloud-based AI (Anthropic Claude) and local models (Ollama). No dependencies, no complex setup - just type what you want and get the command you need.
 
 <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies"> <img src="https://img.shields.io/badge/size-<5KB-blue" alt="Tiny Size"> <img src="https://img.shields.io/badge/setup-30_seconds-orange" alt="Quick Setup">
 
@@ -14,7 +14,7 @@ Transform natural language into shell commands instantly. No dependencies, no co
 
 **🎯 Dead Simple** - Just type `# what you want to do` and press Enter. That's it.
 
-**🔒 Privacy First** - Bring your own API keys. Your commands stay local, API calls only when you trigger them.
+**🔒 Privacy First** - Use local Ollama models for complete privacy, or bring your own API keys. Your commands stay local, API calls only when you trigger them.
 
 **🛠️ Zero Dependencies** - Optionally `jq` for reliability.
 
@@ -42,9 +42,12 @@ Just type what you want in plain English, get the exact command you need.
 ## Prerequisites
 
 - ✅ zsh 5.0+ (you probably already have this)
-- ✅ An [Anthropic API key](https://console.anthropic.com/account/keys) (one-time setup)
 - ✅ `curl` (already on macOS/Linux)
 - ➕ `jq` (optional, for better reliability)
+
+**Choose your AI provider:**
+- **Anthropic Claude** (default): [Get API key](https://console.anthropic.com/account/keys)
+- **Ollama** (local): [Install Ollama](https://ollama.ai/download)
 
 ## Installation
 
@@ -82,13 +85,36 @@ echo "source ~/.zsh-ai/zsh-ai.plugin.zsh" >> ~/.zshrc
 
 ### Setup
 
-Set your Anthropic API key:
-
+**Option 1: Anthropic Claude (default)**
 ```bash
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
-Add this to your `~/.zshrc` to make it permanent.
+**Option 2: Ollama (local models)**
+```bash
+# Run a model (e.g., 3.2)
+ollama run llama3.2
+
+# Configure zsh-ai to use Ollama
+export ZSH_AI_PROVIDER="ollama"
+```
+
+Add to your `~/.zshrc` to make it permanent.
+
+### Configuration
+
+All configuration is done via environment variables with sensible defaults:
+
+```bash
+# Choose AI provider: "anthropic" (default) or "ollama"
+export ZSH_AI_PROVIDER="anthropic"
+
+# Ollama-specific settings 
+export ZSH_AI_OLLAMA_MODEL="llama3.2"  # (default)
+export ZSH_AI_OLLAMA_URL="http://localhost:11434"  # (default)
+```
+
+**That's it!** Most users won't need to change anything.
 
 
 ## Troubleshooting
@@ -97,7 +123,20 @@ Add this to your `~/.zshrc` to make it permanent.
 ```bash
 zsh-ai: Warning: ANTHROPIC_API_KEY not set. Plugin will not function.
 ```
-Solution: Set your API key as shown in the Setup section.
+Solution: Either set your API key or switch to Ollama:
+```bash
+# Option 1: Set Anthropic API key
+export ANTHROPIC_API_KEY="your-key"
+
+# Option 2: Use Ollama instead
+export ZSH_AI_PROVIDER="ollama"
+```
+
+### Ollama not running
+```bash
+Error: Ollama is not running at http://localhost:11434
+```
+Solution: Start Ollama with `ollama serve`
 
 ### JSON parsing errors
 Install `jq` for better reliability:
