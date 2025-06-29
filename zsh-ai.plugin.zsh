@@ -187,7 +187,6 @@ EOF
 
 # Function to call Ollama API
 _zsh_ai_query_ollama() {
-    echo "Using Ollama model: $ZSH_AI_OLLAMA_MODEL"
     local query="$1"
     local response
     
