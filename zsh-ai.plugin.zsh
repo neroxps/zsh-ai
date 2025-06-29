@@ -1,12 +1,26 @@
 #!/usr/bin/env zsh
 
 # zsh-ai - AI-powered command suggestions for zsh
-# Requires ANTHROPIC_API_KEY environment variable to be set
+# Supports both Anthropic Claude and local Ollama models
 
-# Check if API key is set
-if [[ -z "$ANTHROPIC_API_KEY" ]]; then
-    echo "zsh-ai: Warning: ANTHROPIC_API_KEY not set. Plugin will not function."
+# Set default values for configuration
+: ${ZSH_AI_PROVIDER:="anthropic"}  # Default to anthropic for backwards compatibility
+: ${ZSH_AI_OLLAMA_MODEL:="llama3.2"}  # Popular fast model
+: ${ZSH_AI_OLLAMA_URL:="http://localhost:11434"}  # Default Ollama URL
+
+# Provider validation
+if [[ "$ZSH_AI_PROVIDER" != "anthropic" ]] && [[ "$ZSH_AI_PROVIDER" != "ollama" ]]; then
+    echo "zsh-ai: Error: Invalid provider '$ZSH_AI_PROVIDER'. Use 'anthropic' or 'ollama'."
     return 1
+fi
+
+# Check requirements based on provider
+if [[ "$ZSH_AI_PROVIDER" == "anthropic" ]]; then
+    if [[ -z "$ANTHROPIC_API_KEY" ]]; then
+        echo "zsh-ai: Warning: ANTHROPIC_API_KEY not set. Plugin will not function."
+        echo "zsh-ai: Set ANTHROPIC_API_KEY or use ZSH_AI_PROVIDER=ollama for local models."
+        return 1
+    fi
 fi
 
 # Function to detect project type
@@ -97,8 +111,14 @@ _zsh_ai_build_context() {
     echo "$context"
 }
 
+# Function to check if Ollama is running
+_zsh_ai_check_ollama() {
+    curl -s "${ZSH_AI_OLLAMA_URL}/api/tags" >/dev/null 2>&1
+    return $?
+}
+
 # Function to call Anthropic API
-_zsh_ai_query() {
+_zsh_ai_query_anthropic() {
     local query="$1"
     local response
     
@@ -165,6 +185,88 @@ EOF
     fi
 }
 
+# Function to call Ollama API
+_zsh_ai_query_ollama() {
+    echo "Using Ollama model: $ZSH_AI_OLLAMA_MODEL"
+    local query="$1"
+    local response
+    
+    # Build context
+    local context=$(_zsh_ai_build_context)
+    local escaped_context="${context//\"/\\\"}"
+    escaped_context="${escaped_context//$'\n'/\\n}"
+    
+    # Prepare the JSON payload
+    local escaped_query="${query//\"/\\\"}"
+    local json_payload=$(cat <<EOF
+{
+    "model": "$ZSH_AI_OLLAMA_MODEL",
+    "prompt": "$escaped_query",
+    "system": "You are a helpful assistant that generates shell commands. When given a natural language description, respond ONLY with the appropriate shell command. Do not include any explanation, markdown formatting, or backticks. Just the raw command.\n\nContext:\n$escaped_context",
+    "stream": false,
+    "options": {
+        "temperature": 0.3
+    }
+}
+EOF
+)
+    
+    # Call the API
+    response=$(curl -s "${ZSH_AI_OLLAMA_URL}/api/generate" \
+        --header "content-type: application/json" \
+        --data "$json_payload" 2>&1)
+    
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to connect to Ollama. Is it running?"
+        return 1
+    fi
+    
+    # Extract the response
+    if command -v jq &> /dev/null; then
+        local result=$(echo "$response" | jq -r '.response // empty' 2>/dev/null)
+        if [[ -z "$result" ]]; then
+            # Check for error message
+            local error=$(echo "$response" | jq -r '.error // empty' 2>/dev/null)
+            if [[ -n "$error" ]]; then
+                echo "Ollama Error: $error"
+            else
+                echo "Error: Unable to parse Ollama response"
+            fi
+            return 1
+        fi
+        # Clean up the response - remove any trailing newlines
+        result=$(echo "$result" | tr -d '\n' | sed 's/[[:space:]]*$//')
+        echo "$result"
+    else
+        # Fallback parsing without jq
+        local result=$(echo "$response" | grep -o '"response":"[^"]*"' | head -1 | sed 's/"response":"\([^"]*\)"/\1/')
+        if [[ -z "$result" ]]; then
+            echo "Error: Unable to parse response (install jq for better reliability)"
+            return 1
+        fi
+        # Clean up the response
+        result=$(echo "$result" | tr -d '\n' | sed 's/[[:space:]]*$//')
+        echo "$result"
+    fi
+}
+
+# Main query function that routes to the appropriate provider
+_zsh_ai_query() {
+    local query="$1"
+    
+    if [[ "$ZSH_AI_PROVIDER" == "ollama" ]]; then
+        # Check if Ollama is running first
+        if ! _zsh_ai_check_ollama; then
+            echo "Error: Ollama is not running at $ZSH_AI_OLLAMA_URL"
+            echo "Start Ollama with: ollama serve"
+            return 1
+        fi
+        _zsh_ai_query_ollama "$query"
+    else
+        _zsh_ai_query_anthropic "$query"
+    fi
+}
+
 # Custom widget to intercept Enter key
 _zsh_ai_accept_line() {
     # Check if the line starts with "# " and handle multiline input
@@ -218,6 +320,11 @@ zsh-ai() {
     if [[ $# -eq 0 ]]; then
         echo "Usage: zsh-ai \"your natural language command\""
         echo "Example: zsh-ai \"find all python files modified today\""
+        echo ""
+        echo "Current provider: $ZSH_AI_PROVIDER"
+        if [[ "$ZSH_AI_PROVIDER" == "ollama" ]]; then
+            echo "Ollama model: $ZSH_AI_OLLAMA_MODEL"
+        fi
         return 1
     fi
     
