@@ -2,6 +2,12 @@
 
 # Utility functions for zsh-ai
 
+# Function to properly escape strings for JSON
+_zsh_ai_escape_json() {
+    # Use printf and perl for reliable JSON escaping
+    printf '%s' "$1" | perl -0777 -pe 's/\\/\\\\/g; s/"/\\"/g; s/\t/\\t/g; s/\r/\\r/g; s/\n/\\n/g; s/\f/\\f/g; s/\x08/\\b/g; s/[\x00-\x07\x0B\x0E-\x1F]//g'
+}
+
 # Main query function that routes to the appropriate provider
 _zsh_ai_query() {
     local query="$1"

@@ -9,11 +9,10 @@ _zsh_ai_query_anthropic() {
     
     # Build context
     local context=$(_zsh_ai_build_context)
-    local escaped_context="${context//\"/\\\"}"
-    escaped_context="${escaped_context//$'\n'/\\n}"
+    local escaped_context=$(_zsh_ai_escape_json "$context")
     
     # Prepare the JSON payload - escape quotes in the query
-    local escaped_query="${query//\"/\\\"}"
+    local escaped_query=$(_zsh_ai_escape_json "$query")
     local json_payload=$(cat <<EOF
 {
     "model": "claude-3-5-sonnet-20241022",
