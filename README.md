@@ -73,7 +73,10 @@ git clone https://github.com/matheusml/zsh-ai ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
 Add `zsh-ai` to your plugins list in `~/.zshrc`:
 
 ```bash
-plugins=(... zsh-ai)
+plugins=( 
+    # other plugins...
+    zsh-ai
+)
 ```
 
 ### Manual Installation
