@@ -53,24 +53,39 @@ Just type what you want in plain English, get the exact command you need.
 
 ### Homebrew (Recommended)
 
+1. Run this
+
 ```bash
 brew tap matheusml/zsh-ai
 brew install zsh-ai
 ```
 
-Add this to your `~/.zshrc`
+2. Add this to your `~/.zshrc`
 
 ```bash
 source $(brew --prefix)/share/zsh-ai/zsh-ai.plugin.zsh
 ```
 
+3. Start a new terminal session.
+
+### Antigen
+
+1. Add the following to your `.zshrc`:
+
+    ```sh
+    antigen bundle matheusml/zsh-ai
+    ```
+
+2. Start a new terminal session.
+
 ### Oh My Zsh
 
+1. Clone it
 ```bash
 git clone https://github.com/matheusml/zsh-ai ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-ai
 ```
 
-Add `zsh-ai` to your plugins list in `~/.zshrc`:
+2. Add `zsh-ai` to your plugins list in `~/.zshrc`:
 
 ```bash
 plugins=( 
@@ -79,12 +94,21 @@ plugins=(
 )
 ```
 
+3. Start a new terminal session.
+
 ### Manual Installation
 
+1. Clone it
 ```bash
 git clone https://github.com/matheusml/zsh-ai ~/.zsh-ai
+```
+
+2. Add it to your `~/.zshrc`
+```bash
 echo "source ~/.zsh-ai/zsh-ai.plugin.zsh" >> ~/.zshrc
 ```
+
+3. Start a new terminal session.
 
 ### Setup
 
