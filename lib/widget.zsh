@@ -16,13 +16,36 @@ _zsh_ai_accept_line() {
         # Extract the query (remove the "# " prefix)
         local query="${BUFFER:2}"
         
-        # Add a loading indicator
+        # Add a loading indicator with animation
         local saved_buffer="$BUFFER"
-        BUFFER="$BUFFER ⏳"
-        zle redisplay
         
-        # Get AI response
-        local cmd=$(_zsh_ai_query "$query")
+        # Animation frames - rotating dots
+        local dots=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+        
+        local frame=0
+        
+        # Create a temp file for the response
+        local tmpfile=$(mktemp)
+        
+        # Disable job control notifications
+        setopt local_options no_monitor no_notify
+        
+        # Start the API query in background
+        (_zsh_ai_query "$query" > "$tmpfile" 2>&1) &
+        local pid=$!
+        
+        # Animate while waiting
+        while kill -0 $pid 2>/dev/null; do
+            BUFFER="$saved_buffer ${dots[$((frame % ${#dots[@]}))]}"
+            zle redisplay
+            ((frame++))
+            # Use zsh's built-in sleep equivalent
+            zle -R && sleep 0.1
+        done
+        
+        # Get the response
+        local cmd=$(cat "$tmpfile")
+        rm -f "$tmpfile"
         
         if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
             # Simply replace the buffer with the generated command
