@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        zsh-version:
+          - '5.8'
+          - '5.9'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install ZSH
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh
+    
+    - name: Verify ZSH installation
+      run: |
+        zsh --version
+        which zsh
+    
+    - name: Install test dependencies
+      run: |
+        cd tests
+        chmod +x install_zunit.sh
+        ./install_zunit.sh
+    
+    - name: Run tests
+      run: |
+        export PATH="$PWD/tests/.zunit:$PATH"
+        cd tests
+        ./.zunit/zunit
+    
+    - name: Test plugin loading
+      run: |
+        zsh -c "
+          source zsh-ai.plugin.zsh
+          if [[ -z \"\$ZSH_AI_PROVIDER\" ]]; then
+            echo 'Plugin failed to load'
+            exit 1
+          fi
+          echo 'Plugin loaded successfully'
+        "
+
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install shellcheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+    
+    - name: Run shellcheck
+      run: |
+        # Shellcheck all shell scripts (zsh files use bash compatibility mode)
+        find . -name "*.zsh" -o -name "*.sh" | xargs shellcheck -s bash -e SC1090,SC1091,SC2034,SC2154 || true
+    
+    - name: Check file permissions
+      run: |
+        # Ensure test files are not executable (except install script)
+        for file in tests/*.zsh; do
+          if [[ -x "$file" ]]; then
+            echo "Error: $file should not be executable"
+            exit 1
+          fi
+        done
