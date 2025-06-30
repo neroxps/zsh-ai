@@ -36,8 +36,8 @@ jobs:
     
     - name: Run tests
       run: |
-        export PATH="$PWD/tests/.zunit:$PATH"
         cd tests
+        chmod +x .zunit/zunit
         ./.zunit/zunit
     
     - name: Test plugin loading

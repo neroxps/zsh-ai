@@ -2,7 +2,13 @@
 # Install zunit testing framework
 
 ZUNIT_VERSION="v0.8.2"
-INSTALL_DIR="tests/.zunit"
+
+# Determine the correct install directory based on where we're running from
+if [[ "$PWD" == */tests ]]; then
+    INSTALL_DIR=".zunit"
+else
+    INSTALL_DIR="tests/.zunit"
+fi
 
 if [ -d "$INSTALL_DIR" ]; then
     echo "zunit is already installed in $INSTALL_DIR"
