@@ -175,9 +175,15 @@ brew install jq
 sudo apt-get install jq
 ```
 
+## Security
+
+- Your API key is never stored by the plugin
+- Commands are generated locally, not logged
+- Always review generated commands before execution
+
 ## License
 
-MIT - See LICENSE file for details
+MIT - See [License](LICENSE) file for details
 
 ## Contributing
 
@@ -186,10 +192,4 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 - Running tests
 - Code style guidelines
 - Submitting pull requests
-
-## Security
-
-- Your API key is never stored by the plugin
-- Commands are generated locally, not logged
-- Always review generated commands before execution
 
