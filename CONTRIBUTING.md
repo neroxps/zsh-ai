@@ -6,7 +6,7 @@ Thanks for wanting to help! We love contributions from everyone. 💙
 
 1. Fork & clone the repo
 2. Make your changes
-3. Run tests: `./run_tests.sh`
+3. Test your changes (see Testing section below)
 4. Submit a pull request
 
 That's it! We'll help you with the rest.
@@ -17,11 +17,8 @@ That's it! We'll help you with the rest.
 # Try out your changes
 source zsh-ai.plugin.zsh
 
-# Run tests
-./run_tests.sh
-
-# Run a specific test
-./run_tests.sh tests/config.test.zsh
+# The project uses GitHub Actions for testing
+# Tests run automatically on PRs
 ```
 
 ## What We're Looking For
@@ -38,10 +35,23 @@ Just follow the existing style you see in the codebase. When in doubt:
 - Keep functions small
 - Add comments for tricky parts
 
+## Testing
+
+The project uses GitHub Actions for comprehensive testing. Tests will run automatically when you submit a PR.
+
+To manually verify your changes work:
+```bash
+# Source the plugin in your current shell
+source zsh-ai.plugin.zsh
+
+# Test the commands you modified
+zsh-ai "your test query"
+```
+
 ## Submitting PRs
 
 Before submitting:
-- [ ] Tests pass
+- [ ] Your changes work locally
 - [ ] Code matches existing style
 - [ ] Commit messages are clear
 
