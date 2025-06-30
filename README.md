@@ -154,7 +154,11 @@ MIT - See LICENSE file for details
 
 ## Contributing
 
-Pull requests welcome! Please open an issue first to discuss major changes.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+- Setting up your development environment
+- Running tests
+- Code style guidelines
+- Submitting pull requests
 
 ## Security
 
