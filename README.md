@@ -26,6 +26,7 @@ Transform natural language into shell commands instantly. Works with both cloud-
 https://github.com/user-attachments/assets/2d20b4ee-fe1a-466a-af9f-bb04b2bc4f71
 
 
+### Method 1: Comment Syntax (Recommended)
 ```bash
 $ # find all large files modified this week
 $ find . -type f -size +50M -mtime -7
@@ -34,6 +35,18 @@ $ # kill process using port 3000
 $ lsof -ti:3000 | xargs kill -9
 
 $ # compress images in current directory
+$ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
+```
+
+### Method 2: Direct Command
+```bash
+$ zsh-ai "find all large files modified this week"
+$ find . -type f -size +50M -mtime -7
+
+$ zsh-ai "kill process using port 3000"
+$ lsof -ti:3000 | xargs kill -9
+
+$ zsh-ai "compress images in current directory"
 $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ```
 
