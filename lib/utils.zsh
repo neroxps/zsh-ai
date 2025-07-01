@@ -27,6 +27,44 @@ _zsh_ai_query() {
     fi
 }
 
+# Function to run a command with animated loading indicator
+_zsh_ai_with_loading() {
+    local cmd="$1"
+    shift
+    local args=("$@")
+    
+    # Animation frames - rotating dots
+    local dots=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
+    local frame=0
+    
+    # Create a temp file for the response
+    local tmpfile=$(mktemp)
+    
+    # Disable job control notifications
+    setopt local_options no_monitor no_notify
+    
+    # Start the command in background
+    ($cmd "${args[@]}" > "$tmpfile" 2>&1) &
+    local pid=$!
+    
+    # Animate while waiting
+    while kill -0 $pid 2>/dev/null; do
+        print -n "\r\033[K${dots[$((frame % ${#dots[@]}))]}"
+        ((frame++))
+        sleep 0.1
+    done
+    
+    # Clear the animation
+    print -n "\r\033[K"
+    
+    # Get the response
+    cat "$tmpfile"
+    local exit_code=$?
+    rm -f "$tmpfile"
+    
+    return $exit_code
+}
+
 # Optional: Add a helper function for users who prefer explicit commands
 zsh-ai() {
     if [[ $# -eq 0 ]]; then

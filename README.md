@@ -52,6 +52,24 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 
 Just type what you want in plain English, get the exact command you need.
 
+### AI-Powered Command Fix Suggestions 🤖
+
+Made a typo? No problem! zsh-ai automatically detects when commands fail and suggests the correct version:
+
+```bash
+$ git statu
+git: 'statu' is not a git command. See 'git --help'.
+
+🤖 [zsh-ai] Did you mean: git status
+
+$ l -la
+zsh: command not found: l
+
+🤖 [zsh-ai] Did you mean: ls -la
+```
+
+Simply copy and run the suggested command. No more manual corrections!
+
 ## Prerequisites
 
 - ✅ zsh 5.0+ (you probably already have this)
@@ -162,6 +180,9 @@ export ZSH_AI_GEMINI_MODEL="gemini-2.5-flash"  # (default)
 # Ollama-specific settings 
 export ZSH_AI_OLLAMA_MODEL="llama3.2"  # (default)
 export ZSH_AI_OLLAMA_URL="http://localhost:11434"  # (default)
+
+# Automatic command fix suggestions (enabled by default)
+export ZSH_AI_AUTO_FIX="true"  # Set to "false" to disable
 ```
 
 **That's it!** Most users won't need to change anything.
