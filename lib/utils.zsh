@@ -22,6 +22,8 @@ _zsh_ai_query() {
         _zsh_ai_query_ollama "$query"
     elif [[ "$ZSH_AI_PROVIDER" == "gemini" ]]; then
         _zsh_ai_query_gemini "$query"
+    elif [[ "$ZSH_AI_PROVIDER" == "openai" ]]; then
+        _zsh_ai_query_openai "$query"
     else
         _zsh_ai_query_anthropic "$query"
     fi
@@ -38,6 +40,8 @@ zsh-ai() {
             echo "Ollama model: $ZSH_AI_OLLAMA_MODEL"
         elif [[ "$ZSH_AI_PROVIDER" == "gemini" ]]; then
             echo "Gemini model: $ZSH_AI_GEMINI_MODEL"
+        elif [[ "$ZSH_AI_PROVIDER" == "openai" ]]; then
+            echo "OpenAI model: $ZSH_AI_OPENAI_MODEL"
         fi
         return 1
     fi

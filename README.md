@@ -2,7 +2,7 @@
 
 > The lightweight AI assistant that lives in your terminal
 
-Transform natural language into shell commands instantly. Works with cloud-based AI (Anthropic Claude, Google Gemini) and local models (Ollama). No dependencies, no complex setup - just type what you want and get the command you need.
+Transform natural language into shell commands instantly. Works with cloud-based AI (Anthropic Claude, Google Gemini, OpenAI) and local models (Ollama). No dependencies, no complex setup - just type what you want and get the command you need.
 
 <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies"> <img src="https://img.shields.io/badge/size-<5KB-blue" alt="Tiny Size"> <img src="https://img.shields.io/badge/setup-30_seconds-orange" alt="Quick Setup">
 
@@ -61,6 +61,7 @@ Just type what you want in plain English, get the exact command you need.
 **Choose your AI provider:**
 - **Anthropic Claude** (default): [Get API key](https://console.anthropic.com/account/keys)
 - **Google Gemini**: [Get API key](https://makersuite.google.com/app/apikey)
+- **OpenAI**: [Get API key](https://platform.openai.com/api-keys)
 - **Ollama** (local): [Install Ollama](https://ollama.ai/download)
 
 ## Installation
@@ -137,7 +138,15 @@ export GEMINI_API_KEY="your-api-key-here"
 export ZSH_AI_PROVIDER="gemini"
 ```
 
-**Option 3: Ollama (local models)**
+**Option 3: OpenAI**
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+export ZSH_AI_PROVIDER="openai"
+# Optional: Change model (default is gpt-4o)
+export ZSH_AI_OPENAI_MODEL="gpt-4o-mini"
+```
+
+**Option 4: Ollama (local models)**
 ```bash
 # Run a model (e.g., 3.2)
 ollama run llama3.2
@@ -153,11 +162,14 @@ Add to your `~/.zshrc` to make it permanent.
 All configuration is done via environment variables with sensible defaults:
 
 ```bash
-# Choose AI provider: "anthropic" (default), "gemini", or "ollama"
+# Choose AI provider: "anthropic" (default), "gemini", "openai", or "ollama"
 export ZSH_AI_PROVIDER="anthropic"
 
 # Gemini-specific settings
 export ZSH_AI_GEMINI_MODEL="gemini-2.5-flash"  # (default)
+
+# OpenAI-specific settings
+export ZSH_AI_OPENAI_MODEL="gpt-4o"  # (default)
 
 # Ollama-specific settings 
 export ZSH_AI_OLLAMA_MODEL="llama3.2"  # (default)
