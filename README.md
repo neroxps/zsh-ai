@@ -20,13 +20,14 @@ Transform natural language into shell commands instantly. Works with cloud-based
 
 **🧠 Context Aware** - Automatically detects project type, git status, and current directory for smarter suggestions.
 
-## Demo
+## 🎬 See It In Action
 
+### ✨ Method 1: Comment Syntax (Recommended)
+Type `#` followed by what you want to do, then press Enter. It's that simple!
 
-https://github.com/user-attachments/assets/2d20b4ee-fe1a-466a-af9f-bb04b2bc4f71
+<!-- Replace with Method 1 GIF -->
+![Method 1 Demo](https://github.com/user-attachments/assets/method1-demo.gif)
 
-
-### Method 1: Comment Syntax (Recommended)
 ```bash
 $ # find all large files modified this week
 $ find . -type f -size +50M -mtime -7
@@ -38,7 +39,14 @@ $ # compress images in current directory
 $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ```
 
-### Method 2: Direct Command
+---
+
+### 🚀 Method 2: Direct Command
+Prefer explicit commands? Use `zsh-ai` followed by your natural language request.
+
+<!-- Replace with Method 2 GIF -->
+![Method 2 Demo](https://github.com/user-attachments/assets/method2-demo.gif)
+
 ```bash
 $ zsh-ai "find all large files modified this week"
 $ find . -type f -size +50M -mtime -7
@@ -50,11 +58,13 @@ $ zsh-ai "compress images in current directory"
 $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ```
 
-Just type what you want in plain English, get the exact command you need.
+---
 
-### AI-Powered Command Fix Suggestions 🤖 (Optional)
+### 🤖 AI-Powered Command Fix (Optional)
+Never worry about typos again! Enable smart suggestions when commands fail.
 
-Made a typo? Enable auto-fix to get AI-powered suggestions when commands fail.
+<!-- Replace with AI-Powered Suggestions GIF -->
+![AI Fix Demo](https://github.com/user-attachments/assets/ai-fix-demo.gif)
 
 Enable it by adding to your `~/.zshrc`:
 ```bash
@@ -73,8 +83,6 @@ zsh: command not found: l
 
 🤖 [zsh-ai] Did you mean: ls -la
 ```
-
-Simply copy and run the suggested command. No more manual corrections!
 
 ## Quick Start
 
