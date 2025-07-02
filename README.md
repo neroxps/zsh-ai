@@ -4,7 +4,7 @@
 
 Transform natural language into shell commands instantly. Works with cloud-based AI (Anthropic Claude, Google Gemini) and local models (Ollama). No dependencies, no complex setup - just type what you want and get the command you need.
 
-<img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies"> <img src="https://img.shields.io/badge/size-<5KB-blue" alt="Tiny Size"> <img src="https://img.shields.io/badge/setup-30_seconds-orange" alt="Quick Setup">
+<img src="https://img.shields.io/github/v/release/matheusml/ai-zsh?label=version&color=yellow" alt="Version"> <img src="https://img.shields.io/badge/dependencies-zero-brightgreen" alt="Zero Dependencies"> <img src="https://img.shields.io/badge/size-<5KB-blue" alt="Tiny Size"> <img src="https://img.shields.io/github/license/matheusml/ai-zsh?color=purple" alt="License"> <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platform">
 
 ## Why zsh-ai?
 
