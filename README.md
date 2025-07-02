@@ -52,10 +52,16 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 
 Just type what you want in plain English, get the exact command you need.
 
-### AI-Powered Command Fix Suggestions 🤖
+### AI-Powered Command Fix Suggestions 🤖 (Optional)
 
-Made a typo? No problem! zsh-ai automatically detects when commands fail and suggests the correct version:
+Made a typo? Enable auto-fix to get AI-powered suggestions when commands fail.
 
+Enable it by adding to your `~/.zshrc`:
+```bash
+export ZSH_AI_AUTO_FIX="true"
+```
+
+Example:
 ```bash
 $ git statu
 git: 'statu' is not a git command. See 'git --help'.
@@ -181,8 +187,8 @@ export ZSH_AI_GEMINI_MODEL="gemini-2.5-flash"  # (default)
 export ZSH_AI_OLLAMA_MODEL="llama3.2"  # (default)
 export ZSH_AI_OLLAMA_URL="http://localhost:11434"  # (default)
 
-# Automatic command fix suggestions (enabled by default)
-export ZSH_AI_AUTO_FIX="true"  # Set to "false" to disable
+# Automatic command fix suggestions (disabled by default)
+export ZSH_AI_AUTO_FIX="true"  # Set to enable automatic fixes for typos
 ```
 
 **That's it!** Most users won't need to change anything.
