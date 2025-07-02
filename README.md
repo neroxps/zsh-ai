@@ -25,7 +25,7 @@ Transform natural language into shell commands instantly. Works with cloud-based
 ### Method 1: Comment Syntax (Recommended)
 Type `#` followed by what you want to do, then press Enter. It's that simple!
 
-<img src="https://github.com/user-attachments/assets/eff46629-855c-41eb-9de3-a53040bd2654" alt="Method 1 Demo" width="600">
+<img src="https://github.com/user-attachments/assets/eff46629-855c-41eb-9de3-a53040bd2654" alt="Method 1 Demo" width="480">
 
 
 ```bash
@@ -44,7 +44,7 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ### Method 2: Direct Command
 Prefer explicit commands? Use `zsh-ai` followed by your natural language request.
 
-<img src="https://github.com/user-attachments/assets/e58f0b99-68bf-45a5-87b9-ba7f925ddc87" alt="Method 2 Demo" width="600">
+<img src="https://github.com/user-attachments/assets/e58f0b99-68bf-45a5-87b9-ba7f925ddc87" alt="Method 2 Demo" width="480">
 
 
 ```bash
@@ -63,7 +63,7 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ### AI-Powered Command Fix (Optional)
 Never worry about typos again! Enable smart suggestions when commands fail.
 
-<img src="https://github.com/user-attachments/assets/2a3ebb26-9528-4aed-9d96-40ab017fca3f" alt="AI Fix Demo" width="600">
+<img src="https://github.com/user-attachments/assets/2a3ebb26-9528-4aed-9d96-40ab017fca3f" alt="AI Fix Demo" width="480">
 
 
 Enable it by adding to your `~/.zshrc`:
