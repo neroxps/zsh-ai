@@ -14,8 +14,10 @@ source "${plugin_dir}/lib/providers/ollama.zsh"
 source "${plugin_dir}/lib/providers/gemini.zsh"
 source "${plugin_dir}/lib/utils.zsh"
 source "${plugin_dir}/lib/widget.zsh"
+source "${plugin_dir}/lib/command-fixer.zsh"
 
 # Initialize the plugin
 if _zsh_ai_validate_config; then
     _zsh_ai_init_widget
+    _zsh_ai_init_command_fixer
 fi
