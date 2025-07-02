@@ -104,6 +104,9 @@ All configuration is done via environment variables with sensible defaults:
 # Choose AI provider: "anthropic" (default), "gemini", or "ollama"
 export ZSH_AI_PROVIDER="anthropic"
 
+# Anthropic-specific settings
+export ZSH_AI_ANTHROPIC_MODEL="claude-3-5-sonnet-20241022"  # (default)
+
 # Gemini-specific settings
 export ZSH_AI_GEMINI_MODEL="gemini-2.5-flash"  # (default)
 

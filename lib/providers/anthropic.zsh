@@ -15,7 +15,7 @@ _zsh_ai_query_anthropic() {
     local escaped_query=$(_zsh_ai_escape_json "$query")
     local json_payload=$(cat <<EOF
 {
-    "model": "claude-3-5-sonnet-20241022",
+    "model": "$ZSH_AI_ANTHROPIC_MODEL",
     "max_tokens": 256,
     "system": "You are a helpful assistant that generates shell commands. When given a natural language description, respond ONLY with the appropriate shell command. Do not include any explanation, markdown formatting, or backticks. Just the raw command.\n\nContext:\n$escaped_context",
     "messages": [
