@@ -20,13 +20,13 @@ Transform natural language into shell commands instantly. Works with cloud-based
 
 **🧠 Context Aware** - Automatically detects project type, git status, and current directory for smarter suggestions.
 
-## 🎬 See It In Action
+## See It In Action
 
-### ✨ Method 1: Comment Syntax (Recommended)
+### Method 1: Comment Syntax (Recommended)
 Type `#` followed by what you want to do, then press Enter. It's that simple!
 
-<!-- Replace with Method 1 GIF -->
-![Method 1 Demo](https://github.com/user-attachments/assets/method1-demo.gif)
+![example-1](https://github.com/user-attachments/assets/eff46629-855c-41eb-9de3-a53040bd2654)
+
 
 ```bash
 $ # find all large files modified this week
@@ -41,11 +41,11 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 
 ---
 
-### 🚀 Method 2: Direct Command
+### Method 2: Direct Command
 Prefer explicit commands? Use `zsh-ai` followed by your natural language request.
 
-<!-- Replace with Method 2 GIF -->
-![Method 2 Demo](https://github.com/user-attachments/assets/method2-demo.gif)
+![example-2](https://github.com/user-attachments/assets/e58f0b99-68bf-45a5-87b9-ba7f925ddc87)
+
 
 ```bash
 $ zsh-ai "find all large files modified this week"
@@ -60,11 +60,11 @@ $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 
 ---
 
-### 🤖 AI-Powered Command Fix (Optional)
+### AI-Powered Command Fix (Optional)
 Never worry about typos again! Enable smart suggestions when commands fail.
 
-<!-- Replace with AI-Powered Suggestions GIF -->
-![AI Fix Demo](https://github.com/user-attachments/assets/ai-fix-demo.gif)
+![example-3](https://github.com/user-attachments/assets/2a3ebb26-9528-4aed-9d96-40ab017fca3f)
+
 
 Enable it by adding to your `~/.zshrc`:
 ```bash
