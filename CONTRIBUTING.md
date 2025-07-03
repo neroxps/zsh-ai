@@ -39,6 +39,17 @@ Just follow the existing style you see in the codebase. When in doubt:
 
 The project uses GitHub Actions for comprehensive testing. Tests will run automatically when you submit a PR.
 
+To run tests locally:
+```bash
+# Run all tests
+./run-tests.zsh
+
+# Run tests from a specific directory
+./run-tests.zsh tests/providers
+
+# The test runner will execute all *.test.zsh files
+```
+
 To manually verify your changes work:
 ```bash
 # Source the plugin in your current shell

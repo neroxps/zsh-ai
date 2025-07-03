@@ -102,6 +102,13 @@ jobs:
             exit 1
           fi
         "
+    
+    - name: Run test suite
+      run: |
+        # Make test runner executable
+        chmod +x run-tests.zsh
+        # Run all tests
+        ./run-tests.zsh
 
   lint:
     runs-on: ubuntu-latest
