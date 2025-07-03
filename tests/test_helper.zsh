@@ -67,17 +67,81 @@ assert_called() {
 mock_curl_response() {
     local response="$1"
     local exit_code="${2:-0}"
-    mock_command "curl" "$response" "$exit_code"
+    
+    # Store response and exit code in global variables
+    MOCK_CURL_RESPONSE="$response"
+    MOCK_CURL_EXIT_CODE="$exit_code"
+    
+    # Create a global curl function
+    function curl() {
+        if [[ "$MOCK_CURL_EXIT_CODE" -ne 0 ]]; then
+            return "$MOCK_CURL_EXIT_CODE"
+        fi
+        echo "$MOCK_CURL_RESPONSE"
+        return 0
+    }
 }
 
 # Mock jq command
 mock_jq() {
     local available="${1:-true}"
     if [[ "$available" == "true" ]]; then
-        mock_command "command" "jq" 0
-        mock_command "jq" "" 0
+        # Mock command -v jq to return success
+        command() {
+            if [[ "$1" == "-v" ]] && [[ "$2" == "jq" ]]; then
+                echo "/usr/bin/jq"
+                return 0
+            fi
+            builtin command "$@"
+        }
+        # Also mock jq itself to parse JSON properly
+        jq() {
+            local args="$@"
+            local input=$(cat)
+            # Handle -r flag
+            local raw_output=false
+            if [[ "$args" == *"-r"* ]]; then
+                raw_output=true
+                args="${args//-r/}"
+            fi
+            
+            # Parse based on the jq query
+            local result=""
+            if [[ "$args" == *".content[0].text"* ]]; then
+                # For Anthropic responses
+                result=$(echo "$input" | sed -n 's/.*"text":"\([^"]*\(\\.[^"]*\)*\)".*/\1/p' | sed 's/\\"/"/g')
+            elif [[ "$args" == *".error.message"* ]]; then
+                # For error responses
+                result=$(echo "$input" | sed -n 's/.*"message":"\([^"]*\(\\.[^"]*\)*\)".*/\1/p' | sed 's/\\"/"/g')
+            elif [[ "$args" == *".error"* ]]; then
+                # For Ollama error responses
+                result=$(echo "$input" | sed -n 's/.*"error":"\([^"]*\(\\.[^"]*\)*\)".*/\1/p' | sed 's/\\"/"/g')
+            elif [[ "$args" == *".response"* ]]; then
+                # For Ollama responses - handle escaped quotes and newlines
+                # First extract the value, then unescape
+                result=$(echo "$input" | perl -0777 -ne 'if (/"response":\s*"([^"\\]*(\\.[^"\\]*)*)"/) { $val = $1; $val =~ s/\\n/\n/g; $val =~ s/\\"/"/g; print $val; }')
+            elif [[ "$args" == *".candidates[0].content.parts[0].text"* ]]; then
+                # For Gemini responses
+                result=$(echo "$input" | grep -o '"text":"[^"]*"' | head -1 | sed 's/"text":"\([^"]*\)"/\1/')
+            fi
+            
+            # Return result or empty based on // empty handling
+            if [[ -n "$result" ]]; then
+                echo "$result"
+            elif [[ "$args" == *"// empty"* ]]; then
+                # jq returns nothing for empty
+                return 0
+            else
+                return 1
+            fi
+        }
     else
-        mock_command "command" "" 1
+        command() {
+            if [[ "$1" == "-v" ]] && [[ "$2" == "jq" ]]; then
+                return 1
+            fi
+            builtin command "$@"
+        }
     fi
 }
 
@@ -95,6 +159,10 @@ setup_test_env() {
 # Teardown test environment
 teardown_test_env() {
     reset_mocks
+    # Unfunction any mocked commands
+    unfunction command 2>/dev/null
+    unfunction jq 2>/dev/null
+    unfunction curl 2>/dev/null
     unset ZSH_AI_PROVIDER
     unset ANTHROPIC_API_KEY
     unset ZSH_AI_MODEL
@@ -117,6 +185,26 @@ assert_equals() {
     local expected="$2"
     if [[ "$actual" != "$expected" ]]; then
         echo "Expected '$expected' but got '$actual'"
+        return 1
+    fi
+}
+
+# Assert string does not contain
+assert_not_contains() {
+    local haystack="$1"
+    local needle="$2"
+    if [[ "$haystack" == *"$needle"* ]]; then
+        echo "Expected '$haystack' to not contain '$needle'"
+        return 1
+    fi
+}
+
+# Assert greater than
+assert_greater_than() {
+    local actual="$1"
+    local expected="$2"
+    if [[ "$actual" -le "$expected" ]]; then
+        echo "Expected '$actual' to be greater than '$expected'"
         return 1
     fi
 }

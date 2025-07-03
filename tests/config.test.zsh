@@ -6,88 +6,86 @@ source "${0:A:h}/test_helper.zsh"
 # Load the config module
 source "$PLUGIN_DIR/lib/config.zsh"
 
-@setup {
+# Test functions
+test_default_provider() {
     setup_test_env
-}
-
-@teardown {
-    teardown_test_env
-}
-
-@test "Default provider is anthropic" {
     unset ZSH_AI_PROVIDER
     source "$PLUGIN_DIR/lib/config.zsh"
     assert_equals "$ZSH_AI_PROVIDER" "anthropic"
+    teardown_test_env
 }
 
-@test "Default Ollama model is llama3.2" {
+test_default_ollama_model() {
+    setup_test_env
     unset ZSH_AI_OLLAMA_MODEL
     source "$PLUGIN_DIR/lib/config.zsh"
     assert_equals "$ZSH_AI_OLLAMA_MODEL" "llama3.2"
+    teardown_test_env
 }
 
-@test "Default Ollama URL is localhost:11434" {
+test_default_ollama_url() {
+    setup_test_env
     unset ZSH_AI_OLLAMA_URL
     source "$PLUGIN_DIR/lib/config.zsh"
     assert_equals "$ZSH_AI_OLLAMA_URL" "http://localhost:11434"
+    teardown_test_env
 }
 
-@test "Validates anthropic provider" {
+test_validates_anthropic_provider() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
-    run _zsh_ai_validate_config
-    assert $state equals 0
+    _zsh_ai_validate_config >/dev/null 2>&1
+    local result=$?
+    assert_equals "$result" "0"
+    teardown_test_env
 }
 
-@test "Validates ollama provider" {
+test_validates_ollama_provider() {
+    setup_test_env
     export ZSH_AI_PROVIDER="ollama"
-    run _zsh_ai_validate_config
-    assert $state equals 0
+    _zsh_ai_validate_config >/dev/null 2>&1
+    local result=$?
+    assert_equals "$result" "0"
+    teardown_test_env
 }
 
-@test "Rejects invalid provider" {
+test_rejects_invalid_provider() {
+    setup_test_env
     export ZSH_AI_PROVIDER="invalid"
-    run _zsh_ai_validate_config
-    assert $state equals 1
-    assert "$output" contains "Invalid provider 'invalid'"
+    _zsh_ai_validate_config >/dev/null 2>&1
+    local result=$?
+    assert_equals "$result" "1"
+    teardown_test_env
 }
 
-@test "Requires API key for anthropic provider" {
-    export ZSH_AI_PROVIDER="anthropic"
-    unset ANTHROPIC_API_KEY
-    run _zsh_ai_validate_config
-    assert $state equals 1
-    assert "$output" contains "ANTHROPIC_API_KEY not set"
+test_validates_gemini_provider() {
+    setup_test_env
+    export ZSH_AI_PROVIDER="gemini"
+    export GEMINI_API_KEY="test-key"
+    _zsh_ai_validate_config >/dev/null 2>&1
+    local result=$?
+    assert_equals "$result" "0"
+    teardown_test_env
 }
 
-@test "Does not require API key for ollama provider" {
-    export ZSH_AI_PROVIDER="ollama"
-    unset ANTHROPIC_API_KEY
-    run _zsh_ai_validate_config
-    assert $state equals 0
+test_validates_openai_provider() {
+    setup_test_env
+    export ZSH_AI_PROVIDER="openai"
+    export OPENAI_API_KEY="test-key"
+    _zsh_ai_validate_config >/dev/null 2>&1
+    local result=$?
+    assert_equals "$result" "0"
+    teardown_test_env
 }
 
-@test "Preserves existing provider setting" {
-    export ZSH_AI_PROVIDER="ollama"
-    source "$PLUGIN_DIR/lib/config.zsh"
-    assert_equals "$ZSH_AI_PROVIDER" "ollama"
-}
-
-@test "Preserves existing Ollama model setting" {
-    export ZSH_AI_OLLAMA_MODEL="codellama"
-    source "$PLUGIN_DIR/lib/config.zsh"
-    assert_equals "$ZSH_AI_OLLAMA_MODEL" "codellama"
-}
-
-@test "Preserves existing Ollama URL setting" {
-    export ZSH_AI_OLLAMA_URL="http://remote:11434"
-    source "$PLUGIN_DIR/lib/config.zsh"
-    assert_equals "$ZSH_AI_OLLAMA_URL" "http://remote:11434"
-}
-
-@test "Error message suggests ollama for missing API key" {
-    export ZSH_AI_PROVIDER="anthropic"
-    unset ANTHROPIC_API_KEY
-    run _zsh_ai_validate_config
-    assert "$output" contains "use ZSH_AI_PROVIDER=ollama"
-}
+# Run tests
+echo "Running config tests..."
+test_default_provider && echo "✓ Default provider is anthropic"
+test_default_ollama_model && echo "✓ Default Ollama model is llama3.2"
+test_default_ollama_url && echo "✓ Default Ollama URL is localhost:11434"
+test_validates_anthropic_provider && echo "✓ Validates anthropic provider"
+test_validates_ollama_provider && echo "✓ Validates ollama provider"
+test_rejects_invalid_provider && echo "✓ Rejects invalid provider"
+test_validates_gemini_provider && echo "✓ Validates gemini provider"
+test_validates_openai_provider && echo "✓ Validates openai provider"

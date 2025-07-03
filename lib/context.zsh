@@ -51,7 +51,7 @@ _zsh_ai_get_directory_context() {
     local file_count=$(ls -1 2>/dev/null | wc -l | tr -d ' ')
     
     if [[ $file_count -le 20 ]]; then
-        local files=$(ls -1 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
+        local files=$(ls -1 2>/dev/null | head -10 | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')
         if [[ -n "$files" ]]; then
             dir_context="$dir_context\nFiles: $files"
             if [[ $file_count -gt 10 ]]; then

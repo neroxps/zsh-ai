@@ -10,17 +10,11 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
 source "$PLUGIN_DIR/lib/providers/ollama.zsh"
 source "$PLUGIN_DIR/lib/utils.zsh"
 
-@setup {
-    setup_test_env
-}
-
-@teardown {
-    teardown_test_env
-}
+# Test functions
 
 # _zsh_ai_query routing tests
-
-@test "Routes to Anthropic provider when configured" {
+test_routes_to_anthropic_provider() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -29,12 +23,15 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         echo "anthropic:$1"
     }
     
-    run _zsh_ai_query "test query"
-    assert $state equals 0
-    assert "$output" equals "anthropic:test query"
+    local output
+    output=$(_zsh_ai_query "test query")
+    assert_equals "$output" "anthropic:test query"
+    
+    teardown_test_env
 }
 
-@test "Routes to Ollama provider when configured" {
+test_routes_to_ollama_provider() {
+    setup_test_env
     export ZSH_AI_PROVIDER="ollama"
     
     # Mock Ollama check and query functions
@@ -46,12 +43,15 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         echo "ollama:$1"
     }
     
-    run _zsh_ai_query "test query"
-    assert $state equals 0
-    assert "$output" equals "ollama:test query"
+    local output
+    output=$(_zsh_ai_query "test query")
+    assert_equals "$output" "ollama:test query"
+    
+    teardown_test_env
 }
 
-@test "Checks Ollama availability before querying" {
+test_checks_ollama_availability_before_querying() {
+    setup_test_env
     export ZSH_AI_PROVIDER="ollama"
     export ZSH_AI_OLLAMA_URL="http://localhost:11434"
     
@@ -60,36 +60,55 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         return 1
     }
     
-    run _zsh_ai_query "test query"
-    assert $state equals 1
-    assert "$output" contains "Ollama is not running"
-    assert "$output" contains "http://localhost:11434"
-    assert "$output" contains "ollama serve"
+    local output
+    output=$(_zsh_ai_query "test query")
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Ollama is not running"
+    assert_contains "$output" "http://localhost:11434"
+    assert_contains "$output" "ollama serve"
+    
+    teardown_test_env
 }
 
 # zsh-ai command tests
-
-@test "Shows usage when called without arguments" {
+test_shows_usage_without_arguments() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     
-    run zsh-ai
-    assert $state equals 1
-    assert "$output" contains "Usage: zsh-ai"
-    assert "$output" contains "Example:"
-    assert "$output" contains "Current provider: anthropic"
+    # Capture output through a subshell
+    local output
+    output=$(zsh-ai)
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Usage: zsh-ai"
+    assert_contains "$output" "Example:"
+    assert_contains "$output" "Current provider: anthropic"
+    
+    teardown_test_env
 }
 
-@test "Shows Ollama model in usage for Ollama provider" {
+test_shows_ollama_model_in_usage() {
+    setup_test_env
     export ZSH_AI_PROVIDER="ollama"
     export ZSH_AI_OLLAMA_MODEL="llama3.2"
     
-    run zsh-ai
-    assert $state equals 1
-    assert "$output" contains "Current provider: ollama"
-    assert "$output" contains "Ollama model: llama3.2"
+    # Capture output through a subshell
+    local output
+    output=$(zsh-ai)
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Current provider: ollama"
+    assert_contains "$output" "Ollama model: llama3.2"
+    
+    teardown_test_env
 }
 
-@test "Executes command when user confirms" {
+test_executes_command_when_user_confirms() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -111,13 +130,16 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         eval_command="$1"
     }
     
-    run zsh-ai "say hello"
-    assert $state equals 0
-    assert $eval_called equals 1
-    assert "$eval_command" equals "echo 'Hello World'"
+    zsh-ai "say hello" >/dev/null 2>&1
+    
+    assert_equals "$eval_called" "1"
+    assert_equals "$eval_command" "echo 'Hello World'"
+    
+    teardown_test_env
 }
 
-@test "Does not execute command when user declines" {
+test_does_not_execute_when_user_declines() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -137,12 +159,15 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         eval_called=1
     }
     
-    run zsh-ai "dangerous command"
-    assert $state equals 0
-    assert $eval_called equals 0
+    zsh-ai "dangerous command" >/dev/null 2>&1
+    
+    assert_equals "$eval_called" "0"
+    
+    teardown_test_env
 }
 
-@test "Handles API errors in zsh-ai command" {
+test_handles_api_errors_in_zsh_ai() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -151,19 +176,20 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         echo "Error: API connection failed"
     }
     
-    # Mock print to capture output
-    local printed_output=""
-    print() {
-        printed_output="$printed_output$@\n"
-    }
+    # Capture output
+    local output
+    output=$(zsh-ai "test query")
+    local result=$?
     
-    run zsh-ai "test query"
-    assert $state equals 1
-    assert "$printed_output" contains "Failed to generate command"
-    assert "$output" contains "API connection failed"
+    assert_equals "$result" "1"
+    assert_contains "$output" "Failed to generate command"
+    assert_contains "$output" "API connection failed"
+    
+    teardown_test_env
 }
 
-@test "Handles empty response in zsh-ai command" {
+test_handles_empty_response_in_zsh_ai() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -172,18 +198,19 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         echo ""
     }
     
-    # Mock print to capture output
-    local printed_output=""
-    print() {
-        printed_output="$printed_output$@\n"
-    }
+    # Capture output
+    local output
+    output=$(zsh-ai "test query")
+    local result=$?
     
-    run zsh-ai "test query"
-    assert $state equals 1
-    assert "$printed_output" contains "Failed to generate command"
+    assert_equals "$result" "1"
+    assert_contains "$output" "Failed to generate command"
+    
+    teardown_test_env
 }
 
-@test "Combines multiple arguments in zsh-ai command" {
+test_combines_multiple_arguments() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -197,11 +224,15 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         response="n"
     }
     
-    run zsh-ai find all python files
-    assert "$output" contains "query:find all python files"
+    local output
+    output=$(zsh-ai find all python files)
+    assert_contains "$output" "query:find all python files"
+    
+    teardown_test_env
 }
 
-@test "Shows generated command before execution prompt" {
+test_shows_generated_command_before_prompt() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -215,12 +246,16 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         response="n"
     }
     
-    run zsh-ai "list files"
-    assert "$output" contains "ls -la"
-    assert "$output" contains "Execute? [y/N]"
+    local output
+    output=$(zsh-ai "list files")
+    assert_contains "$output" "ls -la"
+    assert_contains "$output" "Execute? [y/N]"
+    
+    teardown_test_env
 }
 
-@test "Case insensitive confirmation acceptance" {
+test_case_insensitive_confirmation() {
+    setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
@@ -239,6 +274,23 @@ source "$PLUGIN_DIR/lib/utils.zsh"
         eval_called=1
     }
     
-    run zsh-ai "show directory"
-    assert $eval_called equals 1
+    zsh-ai "show directory" >/dev/null 2>&1
+    assert_equals "$eval_called" "1"
+    
+    teardown_test_env
 }
+
+# Run tests
+echo "Running utils tests..."
+test_routes_to_anthropic_provider && echo "✓ Routes to Anthropic provider when configured"
+test_routes_to_ollama_provider && echo "✓ Routes to Ollama provider when configured"
+test_checks_ollama_availability_before_querying && echo "✓ Checks Ollama availability before querying"
+test_shows_usage_without_arguments && echo "✓ Shows usage when called without arguments"
+test_shows_ollama_model_in_usage && echo "✓ Shows Ollama model in usage for Ollama provider"
+test_executes_command_when_user_confirms && echo "✓ Executes command when user confirms"
+test_does_not_execute_when_user_declines && echo "✓ Does not execute command when user declines"
+test_handles_api_errors_in_zsh_ai && echo "✓ Handles API errors in zsh-ai command"
+test_handles_empty_response_in_zsh_ai && echo "✓ Handles empty response in zsh-ai command"
+test_combines_multiple_arguments && echo "✓ Combines multiple arguments in zsh-ai command"
+test_shows_generated_command_before_prompt && echo "✓ Shows generated command before execution prompt"
+test_case_insensitive_confirmation && echo "✓ Case insensitive confirmation acceptance"

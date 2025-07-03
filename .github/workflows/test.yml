@@ -107,12 +107,8 @@ jobs:
       run: |
         # Make test runner executable
         chmod +x run-tests.zsh
-        # Run all tests (will run simple format tests)
+        # Run all tests
         ./run-tests.zsh
-        # The runner will exit 0 if tests pass, even if BATS tests show syntax errors
-    
-    # Note: BATS tests would need to be converted from zsh to bash format
-    # For now, the integration tests above and run-tests.zsh provide coverage
 
   lint:
     runs-on: ubuntu-latest
