@@ -35,7 +35,7 @@ EOF
     # Call the API
     response=$(curl -s "${ZSH_AI_OLLAMA_URL}/api/generate" \
         --header "content-type: application/json" \
-        --data "$json_payload" 2>&1)
+        --data "$json_payload")
     
     if [[ $? -ne 0 ]]; then
         echo "Error: Failed to connect to Ollama. Is it running?"
