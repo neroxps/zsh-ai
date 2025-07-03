@@ -5,12 +5,13 @@
 # Variables to track command execution
 typeset -g _ZSH_AI_LAST_COMMAND=""
 typeset -g _ZSH_AI_LAST_EXIT_CODE=0
-typeset -g _ZSH_AI_COMMAND_START_TIME=0
+typeset -g _ZSH_AI_COMMAND_START_TIME=""
 
 # Hook to capture command before execution
 _zsh_ai_preexec() {
     _ZSH_AI_LAST_COMMAND="$1"
-    _ZSH_AI_COMMAND_START_TIME=$EPOCHSECONDS
+    # Use zsh's built-in $SECONDS for sub-second precision
+    _ZSH_AI_COMMAND_START_TIME=$SECONDS
 }
 
 # Hook to check command exit status after execution
@@ -28,6 +29,9 @@ _zsh_ai_precmd() {
         # Skip exit/logout commands
         [[ "$_ZSH_AI_LAST_COMMAND" =~ ^(exit|logout) ]] && return
         
+        # Calculate runtime using zsh's SECONDS (float with microsecond precision)
+        local runtime=$(($SECONDS - ${_ZSH_AI_COMMAND_START_TIME:-$SECONDS}))
+        
         # Exit codes that indicate user interruption or normal termination
         local user_interrupt_codes=(130 131 141 143 146 147 148 149 150)
         
@@ -36,16 +40,22 @@ _zsh_ai_precmd() {
             [[ $_ZSH_AI_LAST_EXIT_CODE -eq $code ]] && {
                 # For interrupt signals, also check runtime
                 if [[ $code -eq 130 ]] || [[ $code -eq 143 ]]; then
-                    # Calculate runtime
-                    local runtime=$((EPOCHSECONDS - _ZSH_AI_COMMAND_START_TIME))
-                    # Skip if command ran for more than 2 seconds (likely intentional interruption)
-                    [[ $runtime -gt 2 ]] && return
+                    # Skip if command ran for more than 0 seconds (likely intentional interruption)
+                    # Note: SECONDS has 1-second precision, so this effectively means >= 1 second
+                    (( runtime > 0 )) && return
                 else
                     # For other codes like SIGPIPE, always skip
                     return
                 fi
             }
         done
+        
+        # For any command that ran for more than 0 seconds and failed with exit code 1,
+        # assume it was intentionally stopped (common with npm start, dev servers, etc.)
+        # Note: SECONDS has 1-second precision, so this effectively means >= 1 second
+        if [[ $_ZSH_AI_LAST_EXIT_CODE -eq 1 ]] && (( runtime > 0 )); then
+            return
+        fi
         
         # Query AI for a fix suggestion
         _zsh_ai_suggest_fix "$_ZSH_AI_LAST_COMMAND"

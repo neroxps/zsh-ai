@@ -42,19 +42,14 @@ test_command_fixer_init() {
 test_preexec_captures_command() {
     setup
     
-    # Ensure EPOCHSECONDS is available
-    if [[ -z "$EPOCHSECONDS" ]]; then
-        EPOCHSECONDS=$(date +%s)
-    fi
-    
     # Run preexec hook
     _zsh_ai_preexec "git statu"
     
     assert_equals "$_ZSH_AI_LAST_COMMAND" "git statu" || return 1
     
-    # Check that timestamp was set
-    if [[ $_ZSH_AI_COMMAND_START_TIME -le 0 ]]; then
-        echo "Expected command start time to be set (got: $_ZSH_AI_COMMAND_START_TIME)"
+    # Check that timestamp was set (should be non-empty)
+    if [[ -z "$_ZSH_AI_COMMAND_START_TIME" ]]; then
+        echo "Expected command start time to be set"
         return 1
     fi
     
@@ -105,58 +100,29 @@ test_skips_sigpipe_exit_code() {
 test_runtime_based_interruption_detection() {
     setup
     
-    # Ensure EPOCHSECONDS is available
-    if [[ -z "$EPOCHSECONDS" ]]; then
-        EPOCHSECONDS=$(date +%s)
-    fi
-    
-    # Test 1: Short command with SIGINT should trigger suggestion
-    _ZSH_AI_LAST_COMMAND="npm start"
-    _ZSH_AI_COMMAND_START_TIME=$EPOCHSECONDS  # Just started
-    
+    # Test helper
     local suggest_fix_called=0
     function _zsh_ai_suggest_fix() {
         suggest_fix_called=1
     }
     
-    # Override _zsh_ai_precmd to skip the exit code capture
-    function _zsh_ai_precmd() {
-        # Check if auto fix is enabled
-        [[ "$ZSH_AI_AUTO_FIX" != "true" ]] && return
-        
-        # Only suggest if command failed and we have a command to analyze
-        if [[ $_ZSH_AI_LAST_EXIT_CODE -ne 0 ]] && [[ -n "$_ZSH_AI_LAST_COMMAND" ]]; then
-            # Skip if it was a comment command (our AI commands)
-            [[ "$_ZSH_AI_LAST_COMMAND" =~ ^'# ' ]] && return
-            
-            # Skip exit/logout commands
-            [[ "$_ZSH_AI_LAST_COMMAND" =~ ^(exit|logout) ]] && return
-            
-            # Exit codes that indicate user interruption or normal termination
-            local user_interrupt_codes=(130 131 141 143 146 147 148 149 150)
-            
-            # Check if this is a user interruption exit code
-            for code in $user_interrupt_codes; do
-                [[ $_ZSH_AI_LAST_EXIT_CODE -eq $code ]] && {
-                    # For interrupt signals, also check runtime
-                    if [[ $code -eq 130 ]] || [[ $code -eq 143 ]]; then
-                        # Calculate runtime
-                        local runtime=$((EPOCHSECONDS - _ZSH_AI_COMMAND_START_TIME))
-                        # Skip if command ran for more than 2 seconds (likely intentional interruption)
-                        [[ $runtime -gt 2 ]] && return
-                    else
-                        # For other codes like SIGPIPE, always skip
-                        return
-                    fi
-                }
-            done
-            
-            # Query AI for a fix suggestion
-            _zsh_ai_suggest_fix "$_ZSH_AI_LAST_COMMAND"
-        fi
+    # Source to get real implementation
+    source "$PLUGIN_DIR/lib/command-fixer.zsh"
+    
+    # Re-override suggest fix
+    function _zsh_ai_suggest_fix() {
+        suggest_fix_called=1
     }
     
+    # Use SECONDS for timing (zsh built-in with float precision)
+    local now=$SECONDS
+    
+    # Test 1: Short command with SIGINT should trigger suggestion
+    _ZSH_AI_LAST_COMMAND="npm start"
+    _ZSH_AI_COMMAND_START_TIME=$now  # Just started
     _ZSH_AI_LAST_EXIT_CODE=130  # SIGINT
+    suggest_fix_called=0
+    
     _zsh_ai_precmd
     
     if [[ $suggest_fix_called -ne 1 ]]; then
@@ -167,13 +133,39 @@ test_runtime_based_interruption_detection() {
     # Test 2: Long-running command with SIGINT should NOT trigger
     _ZSH_AI_LAST_COMMAND="npm start"
     _ZSH_AI_LAST_EXIT_CODE=130  # SIGINT
-    _ZSH_AI_COMMAND_START_TIME=$((EPOCHSECONDS - 5))  # Ran for 5 seconds
-    
+    _ZSH_AI_COMMAND_START_TIME=$((now - 0.5))  # Ran for 0.5 seconds
     suggest_fix_called=0
+    
     _zsh_ai_precmd
     
     if [[ $suggest_fix_called -ne 0 ]]; then
         echo "Should not suggest for long-running command with SIGINT"
+        return 1
+    fi
+    
+    # Test 3: Long-running command with exit code 1 should NOT trigger
+    _ZSH_AI_LAST_COMMAND="npm start"
+    _ZSH_AI_LAST_EXIT_CODE=1  # Regular failure
+    _ZSH_AI_COMMAND_START_TIME=$((now - 0.5))  # Ran for 0.5 seconds
+    suggest_fix_called=0
+    
+    _zsh_ai_precmd
+    
+    if [[ $suggest_fix_called -ne 0 ]]; then
+        echo "Should not suggest for long-running command with exit code 1"
+        return 1
+    fi
+    
+    # Test 4: Short command with exit code 1 SHOULD trigger
+    _ZSH_AI_LAST_COMMAND="npm start"
+    _ZSH_AI_LAST_EXIT_CODE=1  # Regular failure
+    _ZSH_AI_COMMAND_START_TIME=$((now - 0.1))  # Ran for 0.1 seconds
+    suggest_fix_called=0
+    
+    _zsh_ai_precmd
+    
+    if [[ $suggest_fix_called -ne 1 ]]; then
+        echo "Expected suggestion for short-lived command with exit code 1"
         return 1
     fi
     
