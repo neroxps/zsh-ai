@@ -29,6 +29,15 @@ _zsh_ai_precmd() {
         # Skip exit/logout commands
         [[ "$_ZSH_AI_LAST_COMMAND" =~ ^(exit|logout) ]] && return
         
+        # Skip commands that likely opened an editor or interactive prompt
+        # These often exit with 1 when cancelled/aborted, which is expected behavior
+        if [[ $_ZSH_AI_LAST_EXIT_CODE -eq 1 ]]; then
+            # Check for editor-related patterns
+            [[ "$_ZSH_AI_LAST_COMMAND" =~ (vim|vi|nano|emacs|code|subl|atom|nvim)($|[[:space:]]) ]] && return
+            [[ "$_ZSH_AI_LAST_COMMAND" =~ --edit ]] && return
+            [[ "$_ZSH_AI_LAST_COMMAND" =~ (commit|rebase|config.*edit|visudo|vipw|crontab) ]] && return
+        fi
+        
         # Calculate runtime using zsh's SECONDS (float with microsecond precision)
         local runtime=$(($SECONDS - ${_ZSH_AI_COMMAND_START_TIME:-$SECONDS}))
         

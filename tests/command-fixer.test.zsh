@@ -348,6 +348,46 @@ test_skips_when_disabled() {
     teardown
 }
 
+# Test: Skips editor and interactive commands
+test_skips_editor_commands() {
+    setup
+    
+    # Source to get real implementation
+    source "$PLUGIN_DIR/lib/command-fixer.zsh"
+    
+    # Test various editor/interactive commands that exit with 1
+    local editor_commands=(
+        "git commit"
+        "git rebase -i"
+        "vim file.txt"
+        "nano file.txt"
+        "crontab -e"
+        "git config --edit"
+        "visudo"
+    )
+    
+    for cmd in $editor_commands; do
+        _ZSH_AI_LAST_COMMAND="$cmd"
+        _ZSH_AI_LAST_EXIT_CODE=1  # Common when aborting editor
+        _ZSH_AI_COMMAND_START_TIME=$SECONDS
+        
+        # Mock print functions to capture output
+        local output=""
+        print() { output+="$*"; }
+        
+        # Run precmd hook
+        _zsh_ai_precmd
+        
+        # Should not have any output since we skip editor commands
+        if [[ -n "$output" ]]; then
+            echo "Expected no output for command '$cmd' but got output"
+            return 1
+        fi
+    done
+    
+    teardown
+}
+
 # Run tests
 echo "Running command-fixer tests..."
 test_command_fixer_init && echo "✓ Command fixer init"
@@ -360,4 +400,5 @@ test_suggests_fix_for_failed_command || echo "✗ Suggests fix for failed comman
 test_auto_populate_buffer && echo "✓ Auto-populate buffer functionality"
 test_handles_missing_api_key && echo "✓ Handles missing API key"
 test_skips_comment_commands && echo "✓ Skips comment commands"
+test_skips_editor_commands && echo "✓ Skips editor commands"
 test_skips_when_disabled && echo "✓ Skips when disabled"
