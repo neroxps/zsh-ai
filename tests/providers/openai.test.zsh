@@ -71,5 +71,13 @@ test_openai_json_escaping() {
     assert_not_empty "$result"
 }
 
+# Add missing assert_not_empty function
+assert_not_empty() {
+    [[ -n "$1" ]]
+}
+
 # Run tests
-run_tests
+echo "Running OpenAI provider tests..."
+test_openai_query_success && echo "✓ OpenAI query success"
+test_openai_query_error_response && echo "✓ OpenAI error response handling"
+test_openai_json_escaping && echo "✓ OpenAI JSON escaping"

@@ -41,13 +41,22 @@ The project uses GitHub Actions for comprehensive testing. Tests will run automa
 
 To run tests locally:
 ```bash
-# Run all tests
+# Run all tests (simple format tests will work)
 ./run-tests.zsh
 
-# Run tests from a specific directory
-./run-tests.zsh tests/providers
-
 # The test runner will execute all *.test.zsh files
+# Note: BATS-style tests require BATS to be installed
+```
+
+For full test coverage including BATS-style tests:
+```bash
+# Install BATS test framework
+brew install bats-core
+
+# Then run BATS tests individually
+bats tests/config.test.zsh
+bats tests/context.test.zsh
+# etc.
 ```
 
 To manually verify your changes work:
