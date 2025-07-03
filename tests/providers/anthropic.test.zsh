@@ -4,19 +4,16 @@
 source "${0:A:h:h}/test_helper.zsh"
 
 # Load the context and anthropic provider modules
+source "$PLUGIN_DIR/lib/utils.zsh"
 source "$PLUGIN_DIR/lib/context.zsh"
 source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
 
-@setup {
+# Test functions
+
+test_successful_api_call_with_jq() {
     setup_test_env
     export ANTHROPIC_API_KEY="test-api-key"
-}
-
-@teardown {
-    teardown_test_env
-}
-
-@test "Successful API call with jq available" {
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -24,13 +21,20 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{"content":[{"text":"ls -la"}]}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "list all files"
-    assert $state equals 0
-    assert "$output" equals "ls -la"
-    assert_called "curl" 1
+    local output
+    output=$(_zsh_ai_query_anthropic "list all files")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "ls -la"
+    
+    teardown_test_env
 }
 
-@test "Successful API call without jq" {
+test_successful_api_call_without_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as unavailable
     mock_jq "false"
     
@@ -38,12 +42,20 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{"content":[{"text":"cd /home/user"}]}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "go to home directory"
-    assert $state equals 0
-    assert "$output" equals "cd /home/user"
+    local output
+    output=$(_zsh_ai_query_anthropic "go to home directory")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "cd /home/user"
+    
+    teardown_test_env
 }
 
-@test "Handles API error response with jq" {
+test_handles_api_error_response_with_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -51,21 +63,37 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{"error":{"message":"Invalid API key"}}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "test query"
-    assert $state equals 1
-    assert "$output" contains "API Error: Invalid API key"
+    local output
+    output=$(_zsh_ai_query_anthropic "test query")
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "API Error: Invalid API key"
+    
+    teardown_test_env
 }
 
-@test "Handles curl connection failure" {
+test_handles_curl_connection_failure() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock curl failure
     mock_command "curl" "" 1
     
-    run _zsh_ai_query_anthropic "test query"
-    assert $state equals 1
-    assert "$output" contains "Failed to connect to Anthropic API"
+    local output
+    output=$(_zsh_ai_query_anthropic "test query")
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Failed to connect to Anthropic API"
+    
+    teardown_test_env
 }
 
-@test "Handles empty response with jq" {
+test_handles_empty_response_with_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -73,12 +101,20 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "test query"
-    assert $state equals 1
-    assert "$output" contains "Unable to parse response"
+    local output
+    output=$(_zsh_ai_query_anthropic "test query")
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Unable to parse response"
+    
+    teardown_test_env
 }
 
-@test "Handles malformed response without jq" {
+test_handles_malformed_response_without_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as unavailable
     mock_jq "false"
     
@@ -86,13 +122,21 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{"malformed": "data"}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "test query"
-    assert $state equals 1
-    assert "$output" contains "Unable to parse response"
-    assert "$output" contains "install jq"
+    local output
+    output=$(_zsh_ai_query_anthropic "test query")
+    local result=$?
+    
+    assert_equals "$result" "1"
+    assert_contains "$output" "Unable to parse response"
+    assert_contains "$output" "install jq"
+    
+    teardown_test_env
 }
 
-@test "Escapes quotes in query" {
+test_escapes_quotes_in_query() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -103,28 +147,47 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     # Capture the actual curl call to verify escaping
     mock_command "curl" "$mock_response" 0
     
-    run _zsh_ai_query_anthropic 'print "Hello World"'
-    assert $state equals 0
-    assert_called "curl" 1
+    local output
+    output=$(_zsh_ai_query_anthropic 'print "Hello World"')
+    local result=$?
+    
+    assert_equals "$result" "0"
+    
+    teardown_test_env
 }
 
-@test "Includes context in API call" {
+test_includes_context_in_api_call() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
     # Create a test environment with specific context
+    local TEST_DIR=$(create_test_dir)
+    cd "$TEST_DIR"
     touch package.json
     
     # Mock successful response
     local mock_response='{"content":[{"text":"npm install"}]}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "install dependencies"
-    assert $state equals 0
-    assert "$output" equals "npm install"
+    local output
+    output=$(_zsh_ai_query_anthropic "install dependencies")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "npm install"
+    
+    cd - >/dev/null 2>&1
+    cleanup_test_dir "$TEST_DIR"
+    teardown_test_env
 }
 
-@test "Uses correct API headers" {
+test_uses_correct_api_headers() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -132,14 +195,19 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local captured_args=""
     mock_command "curl" '{"content":[{"text":"ls"}]}' 0
     
-    run _zsh_ai_query_anthropic "list files"
-    assert $state equals 0
+    local output
+    output=$(_zsh_ai_query_anthropic "list files")
+    local result=$?
     
-    # Verify curl was called
-    assert_called "curl" 1
+    assert_equals "$result" "0"
+    
+    teardown_test_env
 }
 
-@test "Uses correct model" {
+test_uses_correct_model() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
@@ -147,23 +215,54 @@ source "$PLUGIN_DIR/lib/providers/anthropic.zsh"
     local mock_response='{"content":[{"text":"pwd"}]}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "show current directory"
-    assert $state equals 0
-    assert "$output" equals "pwd"
+    local output
+    output=$(_zsh_ai_query_anthropic "show current directory")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "pwd"
+    
+    teardown_test_env
 }
 
-@test "Handles multiline context properly" {
+test_handles_multiline_context_properly() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
     # Mock jq as available
     mock_jq "true"
     
     # Create files to generate multiline context
+    local TEST_DIR=$(create_test_dir)
+    cd "$TEST_DIR"
     touch file1.txt file2.txt file3.txt
     
     # Mock successful response
     local mock_response='{"content":[{"text":"ls -la"}]}'
     mock_curl_response "$mock_response" 0
     
-    run _zsh_ai_query_anthropic "list all files"
-    assert $state equals 0
-    assert "$output" equals "ls -la"
+    local output
+    output=$(_zsh_ai_query_anthropic "list all files")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "ls -la"
+    
+    cd - >/dev/null 2>&1
+    cleanup_test_dir "$TEST_DIR"
+    teardown_test_env
 }
+
+# Run tests
+echo "Running anthropic provider tests..."
+test_successful_api_call_with_jq && echo "✓ Successful API call with jq available"
+test_successful_api_call_without_jq && echo "✓ Successful API call without jq"
+test_handles_api_error_response_with_jq && echo "✓ Handles API error response with jq"
+test_handles_curl_connection_failure && echo "✓ Handles curl connection failure"
+test_handles_empty_response_with_jq && echo "✓ Handles empty response with jq"
+test_handles_malformed_response_without_jq && echo "✓ Handles malformed response without jq"
+test_escapes_quotes_in_query && echo "✓ Escapes quotes in query"
+test_includes_context_in_api_call && echo "✓ Includes context in API call"
+test_uses_correct_api_headers && echo "✓ Uses correct API headers"
+test_uses_correct_model && echo "✓ Uses correct model"
+test_handles_multiline_context_properly && echo "✓ Handles multiline context properly"

@@ -39,6 +39,41 @@ Just follow the existing style you see in the codebase. When in doubt:
 
 The project uses GitHub Actions for comprehensive testing. Tests will run automatically when you submit a PR.
 
+To run tests locally:
+```bash
+# Run all tests
+./run-tests.zsh
+
+# Run tests from a specific directory
+./run-tests.zsh tests/providers
+
+# Run a single test file
+zsh tests/config.test.zsh
+```
+
+### Writing Tests
+
+Tests use a simple format:
+
+```zsh
+#!/usr/bin/env zsh
+
+# Load test helper
+source "${0:A:h}/test_helper.zsh"
+
+# Test function
+test_my_feature() {
+    setup_test_env
+    # Your test code here
+    assert_equals "$actual" "$expected"
+    teardown_test_env
+}
+
+# Run tests
+echo "Running my tests..."
+test_my_feature && echo "✓ My feature works"
+```
+
 To manually verify your changes work:
 ```bash
 # Source the plugin in your current shell
