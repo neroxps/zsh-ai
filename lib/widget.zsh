@@ -31,7 +31,8 @@ _zsh_ai_accept_line() {
         setopt local_options no_monitor no_notify
         
         # Start the API query in background
-        (_zsh_ai_query "$query" > "$tmpfile" 2>&1) &
+        # Only redirect stdout to tmpfile, let stderr go to /dev/null to avoid mixing error output
+        (_zsh_ai_query "$query" > "$tmpfile" 2>/dev/null) &
         local pid=$!
         
         # Animate while waiting
