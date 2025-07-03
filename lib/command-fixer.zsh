@@ -26,6 +26,12 @@ _zsh_ai_precmd() {
         # Skip exit/logout commands
         [[ "$_ZSH_AI_LAST_COMMAND" =~ ^(exit|logout) ]] && return
         
+        # Skip SIGPIPE errors (exit code 141) - common when quitting pagers
+        [[ $_ZSH_AI_LAST_EXIT_CODE -eq 141 ]] && return
+        
+        # Skip commands that commonly use pagers
+        [[ "$_ZSH_AI_LAST_COMMAND" =~ ^(git\s+(log|diff|show)|less|more|man|help) ]] && return
+        
         # Query AI for a fix suggestion
         _zsh_ai_suggest_fix "$_ZSH_AI_LAST_COMMAND"
     fi
