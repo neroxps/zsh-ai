@@ -125,6 +125,65 @@ test_skips_pager_commands() {
     teardown
 }
 
+# Test: Skips SIGINT (Ctrl+C) exit code
+test_skips_sigint_exit_code() {
+    setup
+    
+    _ZSH_AI_LAST_COMMAND="npm start"
+    _ZSH_AI_LAST_EXIT_CODE=130  # SIGINT exit code
+    
+    # Mock print functions to capture output
+    local output=""
+    print() { output+="$*"; }
+    
+    # Run precmd hook
+    _zsh_ai_precmd
+    
+    # Should not have any output since we skip SIGINT
+    assert_equals "$output" "" || return 1
+    
+    teardown
+}
+
+# Test: Skips long-running commands
+test_skips_long_running_commands() {
+    setup
+    
+    local long_running_commands=(
+        "npm start"
+        "npm run dev"
+        "yarn start"
+        "yarn dev"
+        "pnpm start"
+        "pnpm dev"
+        "serve"
+        "python script.py"
+        "node server.js"
+        "deno run app.ts"
+        "bun run index.js"
+    )
+    
+    for cmd in $long_running_commands; do
+        _ZSH_AI_LAST_COMMAND="$cmd"
+        _ZSH_AI_LAST_EXIT_CODE=1
+        
+        # Mock print functions to capture output
+        local output=""
+        print() { output+="$*"; }
+        
+        # Run precmd hook
+        _zsh_ai_precmd
+        
+        # Should not have any output since we skip long-running commands
+        if [[ -n "$output" ]]; then
+            echo "Expected no output for command '$cmd' but got output"
+            return 1
+        fi
+    done
+    
+    teardown
+}
+
 # Test: Suggests fix for failed command
 test_suggests_fix_for_failed_command() {
     setup
@@ -271,7 +330,9 @@ test_command_fixer_init && echo "✓ Command fixer init"
 test_preexec_captures_command && echo "✓ Preexec captures command"
 test_skips_successful_commands && echo "✓ Skips successful commands"
 test_skips_sigpipe_exit_code && echo "✓ Skips SIGPIPE exit code"
+test_skips_sigint_exit_code && echo "✓ Skips SIGINT exit code"
 test_skips_pager_commands && echo "✓ Skips pager commands"
+test_skips_long_running_commands && echo "✓ Skips long-running commands"
 test_suggests_fix_for_failed_command || echo "✗ Suggests fix for failed command"
 test_auto_populate_buffer && echo "✓ Auto-populate buffer functionality"
 test_skips_comment_commands && echo "✓ Skips comment commands"
