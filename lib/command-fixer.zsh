@@ -72,6 +72,7 @@ _zsh_ai_suggest_fix() {
     # Validate and display suggestion
     if [[ -n "$suggestion" ]] && [[ "$suggestion" != "Error:"* ]] && [[ "$suggestion" != "$failed_cmd" ]]; then
         print -P "%F{blue}🤖 %B[zsh-ai]%b Did you mean: %F{cyan}$suggestion%f"
+        print -z "$suggestion"
     fi
 }
 
