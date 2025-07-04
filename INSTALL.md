@@ -125,9 +125,6 @@ export ZSH_AI_OPENAI_MODEL="gpt-4o"  # (default)
 # Ollama-specific settings 
 export ZSH_AI_OLLAMA_MODEL="llama3.2"  # (default)
 export ZSH_AI_OLLAMA_URL="http://localhost:11434"  # (default)
-
-# Automatic command fix suggestions (disabled by default)
-export ZSH_AI_AUTO_FIX="true"  # Set to enable automatic fixes for typos
 ```
 
 **That's it!** Most users won't need to change anything.
