@@ -30,9 +30,9 @@ _zsh_ai_accept_line() {
         # Disable job control notifications
         setopt local_options no_monitor no_notify
         
-        # Start the API query in background
+        # Start the API query in background using the shared function
         # Only redirect stdout to tmpfile, let stderr go to /dev/null to avoid mixing error output
-        (_zsh_ai_query "$query" > "$tmpfile" 2>/dev/null) &
+        (_zsh_ai_execute_command "$query" > "$tmpfile" 2>/dev/null) &
         local pid=$!
         
         # Animate while waiting
@@ -46,6 +46,7 @@ _zsh_ai_accept_line() {
         
         # Get the response
         local cmd=$(cat "$tmpfile")
+        local exit_code=$?
         rm -f "$tmpfile"
         
         if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
