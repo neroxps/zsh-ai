@@ -107,7 +107,7 @@ test_shows_ollama_model_in_usage() {
     teardown_test_env
 }
 
-test_executes_command_when_user_confirms() {
+test_executes_command_directly() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -115,11 +115,6 @@ test_executes_command_when_user_confirms() {
     # Mock query function
     _zsh_ai_query() {
         echo "echo 'Hello World'"
-    }
-    
-    # Mock read to simulate user input
-    read() {
-        response="y"
     }
     
     # Track eval execution
@@ -138,30 +133,28 @@ test_executes_command_when_user_confirms() {
     teardown_test_env
 }
 
-test_does_not_execute_when_user_declines() {
+test_executes_all_commands_without_confirmation() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
     # Mock query function
     _zsh_ai_query() {
-        echo "rm -rf /"
-    }
-    
-    # Mock read to simulate user input
-    read() {
-        response="n"
+        echo "ls -la"
     }
     
     # Track eval execution
     local eval_called=0
+    local eval_command=""
     eval() {
         eval_called=1
+        eval_command="$1"
     }
     
-    zsh-ai "dangerous command" >/dev/null 2>&1
+    zsh-ai "list files" >/dev/null 2>&1
     
-    assert_equals "$eval_called" "0"
+    assert_equals "$eval_called" "1"
+    assert_equals "$eval_command" "ls -la"
     
     teardown_test_env
 }
@@ -176,9 +169,9 @@ test_handles_api_errors_in_zsh_ai() {
         echo "Error: API connection failed"
     }
     
-    # Capture output
+    # Capture output with stderr
     local output
-    output=$(zsh-ai "test query")
+    output=$(zsh-ai "test query" 2>&1)
     local result=$?
     
     assert_equals "$result" "1"
@@ -198,9 +191,9 @@ test_handles_empty_response_in_zsh_ai() {
         echo ""
     }
     
-    # Capture output
+    # Capture output with stderr
     local output
-    output=$(zsh-ai "test query")
+    output=$(zsh-ai "test query" 2>&1)
     local result=$?
     
     assert_equals "$result" "1"
@@ -214,24 +207,28 @@ test_combines_multiple_arguments() {
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
-    # Mock query function to echo the query
-    _zsh_ai_query() {
-        echo "query:$1"
+    # Mock execute command function to echo the query
+    _zsh_ai_execute_command() {
+        echo "find . -name '*.py'"
     }
     
-    # Mock read to decline execution
-    read() {
-        response="n"
+    # Track eval execution
+    local eval_called=0
+    local eval_command=""
+    eval() {
+        eval_called=1
+        eval_command="$1"
     }
     
-    local output
-    output=$(zsh-ai find all python files)
-    assert_contains "$output" "query:find all python files"
+    zsh-ai find all python files >/dev/null 2>&1
+    
+    assert_equals "$eval_called" "1"
+    assert_equals "$eval_command" "find . -name '*.py'"
     
     teardown_test_env
 }
 
-test_shows_generated_command_before_prompt() {
+test_executes_generated_command_directly() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -241,20 +238,30 @@ test_shows_generated_command_before_prompt() {
         echo "ls -la"
     }
     
-    # Mock read to decline execution
-    read() {
-        response="n"
+    # Track eval execution and capture output
+    local eval_called=0
+    local eval_command=""
+    eval() {
+        eval_called=1
+        eval_command="$1"
+        # Simulate command output
+        echo "total 8"
+        echo "drwxr-xr-x  2 user user 4096 Jan  1 00:00 ."
+        echo "drwxr-xr-x 10 user user 4096 Jan  1 00:00 .."
     }
     
     local output
     output=$(zsh-ai "list files")
-    assert_contains "$output" "ls -la"
-    assert_contains "$output" "Execute? [y/N]"
+    
+    assert_equals "$eval_called" "1"
+    assert_equals "$eval_command" "ls -la"
+    # Check that we see the simulated output, not a confirmation prompt
+    assert_contains "$output" "total 8"
     
     teardown_test_env
 }
 
-test_case_insensitive_confirmation() {
+test_no_confirmation_needed() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -264,11 +271,7 @@ test_case_insensitive_confirmation() {
         echo "pwd"
     }
     
-    # Test with uppercase Y
-    read() {
-        response="Y"
-    }
-    
+    # Track eval execution
     local eval_called=0
     eval() {
         eval_called=1
@@ -287,10 +290,10 @@ test_routes_to_ollama_provider && echo "✓ Routes to Ollama provider when confi
 test_checks_ollama_availability_before_querying && echo "✓ Checks Ollama availability before querying"
 test_shows_usage_without_arguments && echo "✓ Shows usage when called without arguments"
 test_shows_ollama_model_in_usage && echo "✓ Shows Ollama model in usage for Ollama provider"
-test_executes_command_when_user_confirms && echo "✓ Executes command when user confirms"
-test_does_not_execute_when_user_declines && echo "✓ Does not execute command when user declines"
+test_executes_command_directly && echo "✓ Executes command directly without confirmation"
+test_executes_all_commands_without_confirmation && echo "✓ Executes all commands without confirmation"
 test_handles_api_errors_in_zsh_ai && echo "✓ Handles API errors in zsh-ai command"
 test_handles_empty_response_in_zsh_ai && echo "✓ Handles empty response in zsh-ai command"
 test_combines_multiple_arguments && echo "✓ Combines multiple arguments in zsh-ai command"
-test_shows_generated_command_before_prompt && echo "✓ Shows generated command before execution prompt"
-test_case_insensitive_confirmation && echo "✓ Case insensitive confirmation acceptance"
+test_executes_generated_command_directly && echo "✓ Executes generated command directly"
+test_no_confirmation_needed && echo "✓ No confirmation needed for command execution"

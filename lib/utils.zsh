@@ -29,6 +29,21 @@ _zsh_ai_query() {
     fi
 }
 
+# Shared function to handle AI command execution
+_zsh_ai_execute_command() {
+    local query="$1"
+    local cmd=$(_zsh_ai_query "$query")
+    
+    if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
+        echo "$cmd"
+        return 0
+    else
+        # Return error
+        echo "$cmd"
+        return 1
+    fi
+}
+
 # Optional: Add a helper function for users who prefer explicit commands
 zsh-ai() {
     if [[ $# -eq 0 ]]; then
@@ -47,15 +62,11 @@ zsh-ai() {
     fi
     
     local query="$*"
-    local cmd=$(_zsh_ai_query "$query")
+    local cmd=$(_zsh_ai_execute_command "$query")
     
-    if [[ -n "$cmd" ]] && [[ "$cmd" != "Error:"* ]] && [[ "$cmd" != "API Error:"* ]]; then
-        echo "$cmd"
-        echo -n "Execute? [y/N] "
-        read -r response
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            eval "$cmd"
-        fi
+    if [[ $? -eq 0 ]]; then
+        # Execute the command directly
+        eval "$cmd"
     else
         print -P "%F{red}Failed to generate command%f"
         if [[ -n "$cmd" ]]; then
