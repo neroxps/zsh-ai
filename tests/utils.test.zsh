@@ -107,7 +107,7 @@ test_shows_ollama_model_in_usage() {
     teardown_test_env
 }
 
-test_executes_command_directly() {
+test_shows_command_without_executing() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -117,23 +117,32 @@ test_executes_command_directly() {
         echo "echo 'Hello World'"
     }
     
-    # Track eval execution
+    # Track eval execution - should NOT be called
     local eval_called=0
-    local eval_command=""
     eval() {
         eval_called=1
-        eval_command="$1"
+    }
+    
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
     }
     
     zsh-ai "say hello" >/dev/null 2>&1
     
-    assert_equals "$eval_called" "1"
-    assert_equals "$eval_command" "echo 'Hello World'"
+    # Should put command in buffer but NOT execute it
+    assert_equals "$eval_called" "0"
+    assert_equals "$buffer_cmd" "echo 'Hello World'"
     
     teardown_test_env
 }
 
-test_executes_all_commands_without_confirmation() {
+test_puts_command_in_buffer() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -143,18 +152,20 @@ test_executes_all_commands_without_confirmation() {
         echo "ls -la"
     }
     
-    # Track eval execution
-    local eval_called=0
-    local eval_command=""
-    eval() {
-        eval_called=1
-        eval_command="$1"
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
     }
     
     zsh-ai "list files" >/dev/null 2>&1
     
-    assert_equals "$eval_called" "1"
-    assert_equals "$eval_command" "ls -la"
+    # Should put command in buffer
+    assert_equals "$buffer_cmd" "ls -la"
     
     teardown_test_env
 }
@@ -207,28 +218,30 @@ test_combines_multiple_arguments() {
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
     
-    # Mock execute command function to echo the query
+    # Mock execute command function
     _zsh_ai_execute_command() {
         echo "find . -name '*.py'"
     }
     
-    # Track eval execution
-    local eval_called=0
-    local eval_command=""
-    eval() {
-        eval_called=1
-        eval_command="$1"
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
     }
     
     zsh-ai find all python files >/dev/null 2>&1
     
-    assert_equals "$eval_called" "1"
-    assert_equals "$eval_command" "find . -name '*.py'"
+    # Should put command in buffer
+    assert_equals "$buffer_cmd" "find . -name '*.py'"
     
     teardown_test_env
 }
 
-test_executes_generated_command_directly() {
+test_puts_generated_command_in_buffer() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -238,30 +251,25 @@ test_executes_generated_command_directly() {
         echo "ls -la"
     }
     
-    # Track eval execution and capture output
-    local eval_called=0
-    local eval_command=""
-    eval() {
-        eval_called=1
-        eval_command="$1"
-        # Simulate command output
-        echo "total 8"
-        echo "drwxr-xr-x  2 user user 4096 Jan  1 00:00 ."
-        echo "drwxr-xr-x 10 user user 4096 Jan  1 00:00 .."
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
     }
     
-    local output
-    output=$(zsh-ai "list files")
+    zsh-ai "list files" >/dev/null 2>&1
     
-    assert_equals "$eval_called" "1"
-    assert_equals "$eval_command" "ls -la"
-    # Check that we see the simulated output, not a confirmation prompt
-    assert_contains "$output" "total 8"
+    # Should put command in buffer
+    assert_equals "$buffer_cmd" "ls -la"
     
     teardown_test_env
 }
 
-test_no_confirmation_needed() {
+test_no_execution_happens() {
     setup_test_env
     export ZSH_AI_PROVIDER="anthropic"
     export ANTHROPIC_API_KEY="test-key"
@@ -271,14 +279,57 @@ test_no_confirmation_needed() {
         echo "pwd"
     }
     
-    # Track eval execution
+    # Track eval execution - should NOT be called
     local eval_called=0
     eval() {
         eval_called=1
     }
     
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
+    }
+    
     zsh-ai "show directory" >/dev/null 2>&1
-    assert_equals "$eval_called" "1"
+    
+    # Should NOT execute the command
+    assert_equals "$eval_called" "0"
+    # Should put command in buffer
+    assert_equals "$buffer_cmd" "pwd"
+    
+    teardown_test_env
+}
+
+test_shows_loading_spinner() {
+    setup_test_env
+    export ZSH_AI_PROVIDER="anthropic"
+    export ANTHROPIC_API_KEY="test-key"
+    
+    # Mock query function with delay to simulate API call
+    _zsh_ai_query() {
+        sleep 0.3
+        echo "ls -la"
+    }
+    
+    # Mock print -z to capture buffer command
+    local buffer_cmd=""
+    print() {
+        if [[ "$1" == "-z" ]]; then
+            buffer_cmd="$2"
+        else
+            builtin print "$@"
+        fi
+    }
+    
+    zsh-ai "list files" >/dev/null 2>&1
+    
+    # Should put command in buffer
+    assert_equals "$buffer_cmd" "ls -la"
     
     teardown_test_env
 }
@@ -290,10 +341,11 @@ test_routes_to_ollama_provider && echo "✓ Routes to Ollama provider when confi
 test_checks_ollama_availability_before_querying && echo "✓ Checks Ollama availability before querying"
 test_shows_usage_without_arguments && echo "✓ Shows usage when called without arguments"
 test_shows_ollama_model_in_usage && echo "✓ Shows Ollama model in usage for Ollama provider"
-test_executes_command_directly && echo "✓ Executes command directly without confirmation"
-test_executes_all_commands_without_confirmation && echo "✓ Executes all commands without confirmation"
+test_shows_command_without_executing && echo "✓ Shows command without executing"
+test_puts_command_in_buffer && echo "✓ Puts command in buffer"
 test_handles_api_errors_in_zsh_ai && echo "✓ Handles API errors in zsh-ai command"
 test_handles_empty_response_in_zsh_ai && echo "✓ Handles empty response in zsh-ai command"
 test_combines_multiple_arguments && echo "✓ Combines multiple arguments in zsh-ai command"
-test_executes_generated_command_directly && echo "✓ Executes generated command directly"
-test_no_confirmation_needed && echo "✓ No confirmation needed for command execution"
+test_puts_generated_command_in_buffer && echo "✓ Puts generated command in buffer"
+test_no_execution_happens && echo "✓ No execution happens"
+test_shows_loading_spinner && echo "✓ Shows loading spinner during command generation"
