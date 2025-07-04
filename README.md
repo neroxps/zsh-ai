@@ -58,32 +58,6 @@ $ zsh-ai "compress images in current directory"
 $ for img in *.{jpg,png}; do convert "$img" -quality 85 "$img"; done
 ```
 
----
-
-### AI-Powered Command Fix (Optional)
-Never worry about typos again! Enable smart suggestions when commands fail.
-
-<img src="https://github.com/user-attachments/assets/2a3ebb26-9528-4aed-9d96-40ab017fca3f" alt="AI Fix Demo" width="480">
-
-
-Enable it by adding to your `~/.zshrc`:
-```bash
-export ZSH_AI_AUTO_FIX="true"
-```
-
-Example:
-```bash
-$ git statu
-git: 'statu' is not a git command. See 'git --help'.
-
-🤖 [zsh-ai] Did you mean: git status
-
-$ l -la
-zsh: command not found: l
-
-🤖 [zsh-ai] Did you mean: ls -la
-```
-
 ## Quick Start
 
 1. **Install** - Choose your preferred method:
