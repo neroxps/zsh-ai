@@ -52,10 +52,6 @@ EOF
                 echo "Ollama Error: $error"
             else
                 echo "Error: Unable to parse Ollama response"
-                # Debug: show first 200 chars of response if parsing failed
-                if [[ -n "$response" ]]; then
-                    echo "Debug: Response preview: ${response:0:200}..." >&2
-                fi
             fi
             return 1
         fi
