@@ -67,14 +67,30 @@ EOF
             fi
             return 1
         fi
+        # Clean up the response - remove newlines and trailing whitespace
+        # Commands should be single-line for shell execution
+        result=$(echo "$result" | tr -d '\n' | sed 's/[[:space:]]*$//')
         echo "$result"
     else
-        # Fallback parsing without jq
-        local result=$(echo "$response" | grep -o '"text":"[^"]*"' | head -1 | sed 's/"text":"\([^"]*\)"/\1/')
+        # Fallback parsing without jq - handle responses with newlines
+        # Use sed to extract the text field, handling potential newlines
+        local result=$(echo "$response" | sed -n 's/.*"text":"\([^"]*\)".*/\1/p' | head -1)
+        
+        # If the simple extraction failed, try a more complex approach for multiline responses
+        if [[ -z "$result" ]]; then
+            # Extract text field even if it contains escaped newlines
+            result=$(echo "$response" | perl -0777 -ne 'print $1 if /"text":"((?:[^"\\]|\\.)*)"/s' 2>/dev/null)
+        fi
+        
         if [[ -z "$result" ]]; then
             echo "Error: Unable to parse response (install jq for better reliability)"
             return 1
         fi
+        
+        # Unescape JSON string (handle \n, \t, etc.) and clean up
+        result=$(echo "$result" | sed 's/\\n/\n/g; s/\\t/\t/g; s/\\r/\r/g; s/\\"/"/g; s/\\\\/\\/g')
+        # Remove trailing newlines and spaces
+        result=$(echo "$result" | sed 's/[[:space:]]*$//')
         echo "$result"
     fi
 }
