@@ -185,6 +185,48 @@ test_handles_empty_response() {
     teardown_test_env
 }
 
+test_handles_response_with_escaped_newline_with_jq() {
+    setup_test_env
+    export GEMINI_API_KEY="test-api-key"
+    
+    # Mock jq as available
+    mock_jq "true"
+    
+    # Mock response with escaped newline
+    local mock_response='{"candidates":[{"content":{"parts":[{"text":"git status\n"}]}}]}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_gemini "check git status")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "git status"
+    
+    teardown_test_env
+}
+
+test_handles_response_with_escaped_newline_without_jq() {
+    setup_test_env
+    export GEMINI_API_KEY="test-api-key"
+    
+    # Mock jq as unavailable
+    mock_jq "false"
+    
+    # Mock response with escaped newline
+    local mock_response='{"candidates":[{"content":{"parts":[{"text":"docker ps\n"}]}}]}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_gemini "list docker containers")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "docker ps"
+    
+    teardown_test_env
+}
+
 # Run tests
 echo "Running gemini provider tests..."
 test_default_model_configuration && echo "✓ Default model configuration"
@@ -197,3 +239,5 @@ test_successful_api_call_without_jq && echo "✓ Successful API call without jq"
 test_handles_api_error_response && echo "✓ Handles API error response"
 test_handles_curl_connection_failure && echo "✓ Handles curl connection failure"
 test_handles_empty_response && echo "✓ Handles empty response"
+test_handles_response_with_escaped_newline_with_jq && echo "✓ Handles response with escaped newline (with jq)"
+test_handles_response_with_escaped_newline_without_jq && echo "✓ Handles response with escaped newline (without jq)"

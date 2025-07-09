@@ -71,6 +71,58 @@ test_openai_json_escaping() {
     assert_not_empty "$result"
 }
 
+test_handles_response_with_newline() {
+    export OPENAI_API_KEY="test-key"
+    export ZSH_AI_OPENAI_MODEL="gpt-4o"
+    
+    # Override curl to return response with newline
+    curl() {
+        if [[ "$*" == *"https://api.openai.com/v1/chat/completions"* ]]; then
+            cat <<EOF
+{
+    "choices": [
+        {
+            "message": {
+                "content": "cd /home\n"
+            }
+        }
+    ]
+}
+EOF
+            return 0
+        fi
+        command curl "$@"
+    }
+    
+    local result=$(_zsh_ai_query_openai "go home")
+    assert_equals "cd /home" "$result"
+}
+
+test_handles_response_without_jq() {
+    export OPENAI_API_KEY="test-key"
+    export ZSH_AI_OPENAI_MODEL="gpt-4o"
+    
+    # Mock jq as unavailable
+    command() {
+        if [[ "$1" == "-v" && "$2" == "jq" ]]; then
+            return 1
+        fi
+        builtin command "$@"
+    }
+    
+    # Override curl for consistent response
+    curl() {
+        if [[ "$*" == *"https://api.openai.com/v1/chat/completions"* ]]; then
+            echo '{"choices":[{"message":{"content":"echo test\n"}}]}'
+            return 0
+        fi
+        builtin command curl "$@"
+    }
+    
+    local result=$(_zsh_ai_query_openai "echo test")
+    assert_equals "echo test" "$result"
+}
+
 # Add missing assert_not_empty function
 assert_not_empty() {
     [[ -n "$1" ]]
@@ -81,3 +133,5 @@ echo "Running OpenAI provider tests..."
 test_openai_query_success && echo "✓ OpenAI query success"
 test_openai_query_error_response && echo "✓ OpenAI error response handling"
 test_openai_json_escaping && echo "✓ OpenAI JSON escaping"
+test_handles_response_with_newline && echo "✓ Handles response with trailing newline"
+test_handles_response_without_jq && echo "✓ Handles response without jq and with newline"

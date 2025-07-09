@@ -253,6 +253,48 @@ test_handles_multiline_context_properly() {
     teardown_test_env
 }
 
+test_handles_response_with_escaped_newline_with_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
+    # Mock jq as available
+    mock_jq "true"
+    
+    # Mock response with escaped newline (trailing newline that should be removed)
+    local mock_response='{"content":[{"text":"ls -la\n"}]}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_anthropic "list files")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "ls -la"
+    
+    teardown_test_env
+}
+
+test_handles_response_with_escaped_newline_without_jq() {
+    setup_test_env
+    export ANTHROPIC_API_KEY="test-api-key"
+    
+    # Mock jq as unavailable
+    mock_jq "false"
+    
+    # Mock response with escaped newline
+    local mock_response='{"content":[{"text":"pwd\n"}]}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_anthropic "show current directory")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "pwd"
+    
+    teardown_test_env
+}
+
 # Run tests
 echo "Running anthropic provider tests..."
 test_successful_api_call_with_jq && echo "✓ Successful API call with jq available"
@@ -266,3 +308,5 @@ test_includes_context_in_api_call && echo "✓ Includes context in API call"
 test_uses_correct_api_headers && echo "✓ Uses correct API headers"
 test_uses_correct_model && echo "✓ Uses correct model"
 test_handles_multiline_context_properly && echo "✓ Handles multiline context properly"
+test_handles_response_with_escaped_newline_with_jq && echo "✓ Handles response with escaped newline (with jq)"
+test_handles_response_with_escaped_newline_without_jq && echo "✓ Handles response with escaped newline (without jq)"
