@@ -25,6 +25,7 @@ _zsh_ai_query_ollama() {
     "prompt": "$escaped_query",
     "system": "You are a helpful assistant that generates shell commands. When given a natural language description, respond ONLY with the appropriate shell command. Do not include any explanation, markdown formatting, or backticks. Just the raw command.\n\nContext:\n$escaped_context",
     "stream": false,
+    "think": false,
     "options": {
         "temperature": 0.3
     }
