@@ -34,7 +34,8 @@ _zsh_ai_query_gemini() {
     },
     "generationConfig": {
         "temperature": 0.3,
-        "maxOutputTokens": 256
+        "maxOutputTokens": 256,
+        "thinkingBudget": 0
     }
 }
 EOF

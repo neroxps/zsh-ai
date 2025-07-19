@@ -356,6 +356,51 @@ test_handles_response_with_escaped_newline_without_jq() {
     teardown_test_env
 }
 
+test_handles_midfield_newline_without_jq() {
+    setup_test_env
+    export ZSH_AI_OLLAMA_MODEL="llama3.2"
+    export ZSH_AI_OLLAMA_URL="http://localhost:11434"
+    
+    # Mock jq as unavailable
+    mock_jq "false"
+    
+    # Mock response with actual newline in the middle of JSON field (as described by pcause)
+    local mock_response='{"model":"llama3.2","created_at":"2025-07-08T15:18:25.393846Z","response":"date
+","done":true}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_ollama "show date")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "date"
+    
+    teardown_test_env
+}
+
+test_handles_thinking_model_response() {
+    setup_test_env
+    export ZSH_AI_OLLAMA_MODEL="llama3.2"
+    export ZSH_AI_OLLAMA_URL="http://localhost:11434"
+    
+    # Mock jq as available
+    mock_jq "true"
+    
+    # Mock response that might include thinking output
+    local mock_response='{"model":"llama3.2","response":"date","think":"Let me think about what command shows the current date...","done":true}'
+    mock_curl_response "$mock_response" 0
+    
+    local output
+    output=$(_zsh_ai_query_ollama "show current date")
+    local result=$?
+    
+    assert_equals "$result" "0"
+    assert_equals "$output" "date"
+    
+    teardown_test_env
+}
+
 # Run tests
 echo "Running ollama provider tests..."
 test_check_ollama_running_success && echo "✓ Check if Ollama is running - success"
@@ -374,3 +419,5 @@ test_includes_context_in_api_call && echo "✓ Includes context in API call"
 test_sets_correct_temperature_option && echo "✓ Sets correct temperature option"
 test_handles_response_with_escaped_newline_with_jq && echo "✓ Handles response with escaped newline (with jq)"
 test_handles_response_with_escaped_newline_without_jq && echo "✓ Handles response with escaped newline (without jq)"
+test_handles_midfield_newline_without_jq && echo "✓ Handles mid-field newline without jq"
+test_handles_thinking_model_response && echo "✓ Handles thinking model response"
